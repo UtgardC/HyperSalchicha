@@ -15,7 +15,11 @@ namespace HyperManzana.Enemies
         public LayerMask playerLayer; // asignar Layer "Player"
         public Transform origin;      // opcional; por defecto el transform propio
 
+        [Tooltip("Tiempo de preparación antes de aplicar el daño tras detectar al jugador en rango.")]
+        public float windup = 0.3f;
+
         private float nextTime;
+        private Coroutine attackRoutine;
         [Header("Animation (opcional)")]
         public Animator animator; // Asignar el Animator del enemigo si quieres disparar trigger Attack
         public string attackTrigger = "Attack";
@@ -33,6 +37,36 @@ namespace HyperManzana.Enemies
             if (Time.time < nextTime) return;
             if (enemyScript != null && enemyScript.IsDead) return;
 
+            // Detectar si el jugador está en rango; si lo está, iniciar la preparación del ataque
+            Vector3 center = Origin.position + Origin.forward * range;
+            var hits = Physics.OverlapSphere(center, radius, playerLayer, QueryTriggerInteraction.Ignore);
+            if (hits != null && hits.Length > 0)
+            {
+                if (attackRoutine == null)
+                {
+                    if (animator != null && !string.IsNullOrEmpty(attackTrigger))
+                    {
+                        animator.SetTrigger(attackTrigger);
+                    }
+                    attackRoutine = StartCoroutine(Co_AttackAfterWindup());
+                }
+            }
+        }
+
+        private System.Collections.IEnumerator Co_AttackAfterWindup()
+        {
+            float tEnd = Time.time + Mathf.Max(0f, windup);
+            while (Time.time < tEnd)
+            {
+                if (enemyScript != null && enemyScript.IsDead)
+                {
+                    attackRoutine = null;
+                    yield break;
+                }
+                yield return null;
+            }
+
+            // Tras el windup, aplicar daño solo si el jugador sigue en rango
             Vector3 center = Origin.position + Origin.forward * range;
             var hits = Physics.OverlapSphere(center, radius, playerLayer, QueryTriggerInteraction.Ignore);
             if (hits != null && hits.Length > 0)
@@ -43,15 +77,13 @@ namespace HyperManzana.Enemies
                     if (stats != null)
                     {
                         stats.TakeDamage(damage);
-                        nextTime = Time.time + cooldown; // un golpe por ventana
-                        if (animator != null && !string.IsNullOrEmpty(attackTrigger))
-                        {
-                            animator.SetTrigger(attackTrigger);
-                        }
+                        nextTime = Time.time + cooldown; // ventana de enfriamiento
                         break;
                     }
                 }
             }
+
+            attackRoutine = null;
         }
 
         private void OnDrawGizmosSelected()

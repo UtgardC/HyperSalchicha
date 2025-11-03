@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using HyperManzana.Managers;
 
 namespace HyperManzana.Player
 {
@@ -113,6 +114,8 @@ namespace HyperManzana.Player
             isDead = true;
             Debug.Log("moriste");
             onDeath.Invoke();
+            // Mostrar Game Over si hay controlador en la escena
+            GameOverController.Instance?.ShowGameOver();
         }
     }
 }
