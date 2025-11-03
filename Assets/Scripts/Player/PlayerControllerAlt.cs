@@ -43,6 +43,10 @@ public class PlayerControllerAlt : MonoBehaviour
     void Update()
     {
         HandleInput();
+    }
+
+    void LateUpdate()
+    {
         HandleCamera();
     }
 
@@ -77,6 +81,7 @@ public class PlayerControllerAlt : MonoBehaviour
     {
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
+        if (x != 0 || z != 0) Debug.Log($"Input de Movimiento: H={x}, V={z}");
 
         Vector3 moveDirection = transform.TransformDirection(new Vector3(x, 0, z).normalized);
         rb.linearVelocity = new Vector3(moveDirection.x * currentMoveSpeed, rb.linearVelocity.y, moveDirection.z * currentMoveSpeed);
@@ -103,8 +108,9 @@ public class PlayerControllerAlt : MonoBehaviour
     {
         if (cameraTransform == null) return;
 
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        // Rotación "forzada" y directa, menos dependiente de la temporización de frames.
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * 0.02f;
+        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * 0.02f;
 
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
@@ -133,4 +139,3 @@ public class PlayerControllerAlt : MonoBehaviour
         Gizmos.DrawLine(origin, origin + Vector3.down * groundRayLength);
     }
 }
-
