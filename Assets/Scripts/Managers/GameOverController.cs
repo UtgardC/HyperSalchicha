@@ -46,6 +46,14 @@ namespace HyperManzana.Managers
         }
 
         // UI Button
+
+        public void ReturnMainMenu()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene("MainMenu");
+        }
+
+        // UI Button
         public void QuitGame()
         {
             Time.timeScale = 1f;
