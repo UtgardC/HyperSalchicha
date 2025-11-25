@@ -23,6 +23,7 @@ namespace HyperManzana.Player
             public bool automatic = false;
 
             [Header("Munición")]
+            public bool ignoreAmmoConsumption = false;
             public int clipSize = 10;
             public int loadedAmmo = 10;
             public bool useReserve = false;
@@ -60,6 +61,7 @@ namespace HyperManzana.Player
         private Coroutine reloadRoutine;
         private Coroutine switchRoutine;
 
+        public Weapon[] Weapons => weapons;
         public int CurrentIndex => currentIndex;
         public Weapon Current => (weapons != null && currentIndex >= 0 && currentIndex < weapons.Length) ? weapons[currentIndex] : null;
 
@@ -253,7 +255,11 @@ namespace HyperManzana.Player
                 return;
             }
 
-            w.loadedAmmo--;
+            if (!w.ignoreAmmoConsumption)
+            {
+                w.loadedAmmo--;
+            }
+            
             if (w.shotCooldown > 0f)
                 w.nextShotTime = Time.time + w.shotCooldown;
             // Actualizar visual de balas (solo si el arma tiene visibles)
