@@ -4,7 +4,11 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
+    [Header("Screen")]
+    [SerializeField] private GameObject gameOverScreen;
+
+
     public int currentRound = 0;
     public int maxRoundRecord = 0;
 
@@ -16,7 +20,6 @@ public class GameManager : MonoBehaviour
 
     }
 
-    // Update is called once per frame
     void Update()
     {
 
@@ -24,13 +27,12 @@ public class GameManager : MonoBehaviour
 
 
 
+    
 
 
 
 
-
-    [Header("Screen")]
-    [SerializeField] private GameObject gameOverScreen;
+    
 
     private bool shown;
     public void ShowGameOver()
