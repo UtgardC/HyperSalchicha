@@ -47,11 +47,23 @@ public class GameManager : MonoBehaviour
     public void SetCuajos(int total)
     {
         cuajosActuales = total;
+        inGameUIManager.UpdateCuajosDisplay(cuajosActuales);
+        inGameUIManager.ShowCuajosChange(0);
     }
 
     public void AddCuajos(int amount)
     {
         cuajosActuales += amount;
+        inGameUIManager.UpdateCuajosDisplay(cuajosActuales);
+        inGameUIManager.ShowCuajosChange(amount);
+    }
+
+    public void SubtractCuajos(int amount)
+    {
+        cuajosActuales -= amount;
+        if (cuajosActuales < 0) cuajosActuales = 0;
+        inGameUIManager.UpdateCuajosDisplay(cuajosActuales);
+        inGameUIManager.ShowCuajosChange(-amount);
     }
 
     public void ShowGameOver()
@@ -92,5 +104,4 @@ public class GameManager : MonoBehaviour
 #endif
     }
 }
-
 
