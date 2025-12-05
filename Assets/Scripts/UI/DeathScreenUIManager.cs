@@ -6,9 +6,6 @@ using TMPro;
 
 public class DeathScreenUIManager : MonoBehaviour
 {
-    [Header("Referencia al GameManager")]
-    [SerializeField] private GameManager gameManager;
-
     [Header("Textos (TextMeshProUGUI)")]
     [SerializeField] private TextMeshProUGUI currentRoundText;
     [SerializeField] private TextMeshProUGUI maxRoundRecordText;
@@ -32,6 +29,7 @@ public class DeathScreenUIManager : MonoBehaviour
     [SerializeField] private float fadeDuration = 0.5f;
     [SerializeField] private Ease fadeEase = Ease.Linear;
 
+    private GameManager Game => GameManager.Instance;
     private Vector3 _bounceOriginalScale;
     private Vector2 _moveOriginalAnchoredPos;
 
@@ -51,14 +49,14 @@ public class DeathScreenUIManager : MonoBehaviour
 
     private void UpdateTexts()
     {
-        currentRoundText.text   = gameManager.currentRound.ToString();
-        maxRoundRecordText.text = gameManager.maxRoundRecord.ToString();
-        cuajosText.text         = gameManager.cuajosActuales.ToString();
+        currentRoundText.text   = Game.currentRound.ToString();
+        maxRoundRecordText.text = Game.maxRoundRecord.ToString();
+        cuajosText.text         = Game.cuajosActuales.ToString();
     }
 
     private void HandleNewRecordBounce()
     {
-        if (gameManager.newRecord)
+        if (Game.newRecord)
         {
             bounceTarget.SetActive(true);
             bounceTarget.transform.localScale = _bounceOriginalScale;

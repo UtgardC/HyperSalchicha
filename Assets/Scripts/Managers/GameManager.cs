@@ -1,47 +1,66 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
 public class GameManager : MonoBehaviour
 {
+    public static GameManager Instance { get; private set; }
 
     [Header("Screen")]
     [SerializeField] private GameObject gameOverScreen;
+    [SerializeField] private InGameUIManager inGameUIManager;
 
-
-    public int currentRound = 0;
-    public int maxRoundRecord = 0;
-
-    public int cuajosActuales = 0;
-
-    public bool newRecord = false;
-    void Start()
-    {
-
-    }
-
-    void Update()
-    {
-
-    }
-
-
-
-    
-
-
-
-
-    
+    [Header("Run Data")]
+    public int currentRound;
+    public int maxRoundRecord;
+    public int cuajosActuales;
+    public bool newRecord;
 
     private bool shown;
+
+    private void Awake()
+    {
+        Instance = this;
+        Time.timeScale = 1f;
+    }
+
+    public void NextRound()
+    {
+        int next = currentRound + 1;
+        SetRound(next);
+        inGameUIManager.UpdateCurrentRoundDisplay(next);
+    }
+
+    public void SetRound(int round)
+    {
+        currentRound = round;
+        if (currentRound > maxRoundRecord)
+        {
+            maxRoundRecord = currentRound;
+            newRecord = true;
+        }
+        else
+        {
+            newRecord = false;
+        }
+    }
+
+    public void SetCuajos(int total)
+    {
+        cuajosActuales = total;
+    }
+
+    public void AddCuajos(int amount)
+    {
+        cuajosActuales += amount;
+    }
+
     public void ShowGameOver()
     {
         if (shown) return;
         shown = true;
 
         Time.timeScale = 0f;
-        if (gameOverScreen != null) gameOverScreen.SetActive(true);
+        gameOverScreen.SetActive(true);
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -56,7 +75,6 @@ public class GameManager : MonoBehaviour
     }
 
     // UI Button
-
     public void ReturnMainMenu()
     {
         Time.timeScale = 1f;
@@ -70,7 +88,7 @@ public class GameManager : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+        Application.Quit();
 #endif
     }
 }

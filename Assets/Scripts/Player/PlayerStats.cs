@@ -115,7 +115,7 @@ namespace HyperManzana.Player
             Debug.Log("moriste");
             onDeath.Invoke();
             // Mostrar Game Over si hay controlador en la escena
-            GameManager.Instance?.ShowGameOver();
+            GameManager.Instance.ShowGameOver();
         }
     }
 }
