@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Guntest
+  m_Name: HeatedQuantum
   m_Shader: {fileID: -6465566751694194690, guid: 3fb3b35b8a6562f45a24ac4dfc1ff6ac, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -123,7 +123,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - IsHeated: 0
+    - IsHeated: 1
     - SpeedBase: 30
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0

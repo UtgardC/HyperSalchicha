@@ -5,7 +5,17 @@ public class PlayerControllerAlt : MonoBehaviour
     [Header("Movimiento")]
     public float moveSpeed = 5f;
     public float sprintMultiplier = 2f;
-    private float currentMoveSpeed;
+    [Tooltip("Aceleración en suelo (m/s²).")]
+    [SerializeField] private float groundAcceleration = 40f;
+    [Tooltip("Desaceleración en suelo cuando no hay input (m/s²).")]
+    [SerializeField] private float groundDeceleration = 60f;
+    [Tooltip("Aceleración en aire (m/s²).")]
+    [SerializeField] private float airAcceleration = 15f;
+    [Tooltip("Porcentaje de control en aire (0-1).")]
+    [Range(0f, 1f)]
+    [SerializeField] private float airControlPercent = 0.35f;
+    [Tooltip("Velocidad mínima base en aire si saltas casi en idle.")]
+    [SerializeField] private float minAirSpeed = 2f;
 
     [Header("Sprint / Stamina")]
     [Tooltip("Usa modo toggle en lugar de mantener la tecla.")]
@@ -23,9 +33,6 @@ public class PlayerControllerAlt : MonoBehaviour
     [SerializeField] private float staminaRegenPerSecond = 20f;
     [Tooltip("Estamina m\u00ednima requerida para poder comenzar a esprintar.")]
     [SerializeField] private float sprintStartThreshold = 10f;
-    [Header("(Opcional) UI")]
-    [SerializeField] private HyperManzana.UI.UIBarFill staminaBar;
-
     [Header("Salto")]
     public float jumpForce = 7f;
     [Tooltip("Tiempo que se recuerda el input de salto (segundos)")] public float jumpBufferTime = 0.15f;
@@ -41,7 +48,6 @@ public class PlayerControllerAlt : MonoBehaviour
     [Header("Cámara")]
     public float mouseSensitivity = 100f;
     public Transform cameraTransform;
-    private float xRotation = 0f;
 
     [Header("Gravedad")]
     public float gravityScale = 1f;
@@ -51,13 +57,22 @@ public class PlayerControllerAlt : MonoBehaviour
     private bool isSprinting;
     private bool sprintBlockedUntilRelease;
 
+    private Vector2 moveInput;
+    private Vector2 lookInput;
+    private float yaw;
+    private float pitch;
+
+    private bool airVelocityCaptured;
+    private Vector3 airVelocityAtJump;
+    private float airSpeedAtJump;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         Cursor.lockState = CursorLockMode.Locked;
-        currentMoveSpeed = moveSpeed;
         ClampStamina();
-        UpdateStaminaUI();
+        yaw = transform.eulerAngles.y;
+        pitch = cameraTransform != null ? NormalizeAngle(cameraTransform.localEulerAngles.x) : 0f;
         if (groundCheckPoint == null)
         {
             groundCheckPoint = transform;
@@ -67,19 +82,20 @@ public class PlayerControllerAlt : MonoBehaviour
     void OnValidate()
     {
         ClampStamina();
-        UpdateStaminaUI();
     }
 
     void Update()
     {
+        ReadInput();
         HandleSprintInput();
         HandleJumpInput();
         UpdateStamina(Time.deltaTime);
+        UpdateLook();
     }
 
     void LateUpdate()
     {
-        HandleCamera();
+        ApplyCameraPitch();
     }
 
     void FixedUpdate()
@@ -88,6 +104,45 @@ public class PlayerControllerAlt : MonoBehaviour
         HandleMovement();
         HandleJump();
         ApplyGravity();
+        ApplyYawRotation();
+    }
+
+    void ReadInput()
+    {
+        moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        lookInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+    }
+
+    void UpdateLook()
+    {
+        float mouseX = lookInput.x * mouseSensitivity * 0.02f;
+        float mouseY = lookInput.y * mouseSensitivity * 0.02f;
+
+        yaw += mouseX;
+        pitch -= mouseY;
+        pitch = Mathf.Clamp(pitch, -90f, 90f);
+    }
+
+    void ApplyYawRotation()
+    {
+        Quaternion target = Quaternion.Euler(0f, yaw, 0f);
+        if (rb == null)
+        {
+            transform.rotation = target;
+            return;
+        }
+
+        bool freezeYaw = (rb.constraints & RigidbodyConstraints.FreezeRotationY) != 0;
+        if (freezeYaw)
+            transform.rotation = target;
+        else
+            rb.MoveRotation(target);
+    }
+
+    void ApplyCameraPitch()
+    {
+        if (cameraTransform == null) return;
+        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void HandleSprintInput()
@@ -116,7 +171,6 @@ public class PlayerControllerAlt : MonoBehaviour
         if (sprintUp && sprintBlockedUntilRelease)
             sprintBlockedUntilRelease = false;
 
-        currentMoveSpeed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
     }
 
     void HandleJumpInput()
@@ -144,7 +198,6 @@ public class PlayerControllerAlt : MonoBehaviour
         }
 
         ClampStamina();
-        UpdateStaminaUI();
     }
 
     void StopSprintFromExhaustion(bool sprintHeld)
@@ -152,7 +205,6 @@ public class PlayerControllerAlt : MonoBehaviour
         if (!isSprinting) return;
 
         isSprinting = false;
-        currentMoveSpeed = moveSpeed;
 
         if (sprintHeld)
         {
@@ -182,14 +234,63 @@ public class PlayerControllerAlt : MonoBehaviour
         return button || key;
     }
 
+    Vector3 GetMoveDirection()
+    {
+        Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
+        if (move.sqrMagnitude > 1f) move.Normalize();
+        return move;
+    }
+
+    void CaptureAirVelocity(Vector3 lateralVelocity, Vector3 moveDirection)
+    {
+        airVelocityAtJump = lateralVelocity;
+        airSpeedAtJump = airVelocityAtJump.magnitude;
+
+        if (airSpeedAtJump < 0.01f)
+        {
+            float targetSpeed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+            if (moveDirection.sqrMagnitude > 0f)
+            {
+                airVelocityAtJump = moveDirection * targetSpeed;
+                airSpeedAtJump = targetSpeed;
+            }
+        }
+
+        airSpeedAtJump = Mathf.Max(airSpeedAtJump, minAirSpeed);
+        airVelocityCaptured = true;
+    }
+
     void HandleMovement()
     {
-        float x = Input.GetAxisRaw("Horizontal");
-        float z = Input.GetAxisRaw("Vertical");
-        if (x != 0 || z != 0) Debug.Log($"Input de Movimiento: H={x}, V={z}");
+        Vector3 moveDirection = GetMoveDirection();
+        Vector3 velocity = rb.linearVelocity;
+        Vector3 lateralVelocity = new Vector3(velocity.x, 0f, velocity.z);
 
-        Vector3 moveDirection = transform.TransformDirection(new Vector3(x, 0, z).normalized);
-        rb.linearVelocity = new Vector3(moveDirection.x * currentMoveSpeed, rb.linearVelocity.y, moveDirection.z * currentMoveSpeed);
+        if (isGrounded)
+        {
+            airVelocityCaptured = false;
+            float targetSpeed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+            Vector3 desired = moveDirection * targetSpeed;
+
+            if (moveDirection.sqrMagnitude > 0f)
+                lateralVelocity = Vector3.MoveTowards(lateralVelocity, desired, groundAcceleration * Time.fixedDeltaTime);
+            else
+                lateralVelocity = Vector3.MoveTowards(lateralVelocity, Vector3.zero, groundDeceleration * Time.fixedDeltaTime);
+
+        }
+        else
+        {
+            if (!airVelocityCaptured)
+                CaptureAirVelocity(lateralVelocity, moveDirection);
+
+            float inputAmount = Mathf.Clamp01(moveInput.magnitude);
+            Vector3 inputVelocity = moveDirection * airSpeedAtJump;
+            Vector3 desired = Vector3.Lerp(airVelocityAtJump, inputVelocity, airControlPercent * inputAmount);
+
+            lateralVelocity = Vector3.MoveTowards(lateralVelocity, desired, airAcceleration * Time.fixedDeltaTime);
+        }
+
+        rb.linearVelocity = new Vector3(lateralVelocity.x, velocity.y, lateralVelocity.z);
     }
 
     void ApplyGravity()
@@ -203,25 +304,19 @@ public class PlayerControllerAlt : MonoBehaviour
         bool jumpBuffered = (Time.time - lastJumpPressedTime) <= jumpBufferTime;
         if (jumpBuffered && isGrounded)
         {
+            Vector3 moveDirection = GetMoveDirection();
+            Vector3 lateralVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+            CaptureAirVelocity(lateralVelocity, moveDirection);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             // consumir el buffer
             lastJumpPressedTime = -999f;
         }
     }
 
-    void HandleCamera()
+    float NormalizeAngle(float angle)
     {
-        if (cameraTransform == null) return;
-
-        // Rotación "forzada" y directa, menos dependiente de la temporización de frames.
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * 0.02f;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * 0.02f;
-
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-
-        cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-        transform.Rotate(Vector3.up * mouseX);
+        if (angle > 180f) angle -= 360f;
+        return angle;
     }
 
     void CheckGround()
@@ -235,12 +330,6 @@ public class PlayerControllerAlt : MonoBehaviour
     {
         if (maxStamina < 1f) maxStamina = 1f;
         stamina = Mathf.Clamp(stamina, 0f, maxStamina);
-    }
-
-    void UpdateStaminaUI()
-    {
-        if (staminaBar != null)
-            staminaBar.Set(stamina, maxStamina);
     }
 
     void OnDrawGizmosSelected()

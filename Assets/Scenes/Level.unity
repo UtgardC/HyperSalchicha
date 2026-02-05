@@ -11903,7 +11903,7 @@ MeshRenderer:
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
   m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
+  m_SelectedEditorRenderState: 2
   m_MinimumChartSize: 4
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
@@ -18827,6 +18827,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   sprintMultiplier: 2
+  groundAcceleration: 40
+  groundDeceleration: 60
+  airAcceleration: 15
+  airControlPercent: 0.35
+  minAirSpeed: 2
   sprintToggleMode: 0
   sprintButton: Fire3
   sprintKey: 304
@@ -18835,7 +18840,6 @@ MonoBehaviour:
   sprintDrainPerSecond: 25
   staminaRegenPerSecond: 20
   sprintStartThreshold: 10
-  staminaBar: {fileID: 0}
   jumpForce: 14
   jumpBufferTime: 0.15
   groundCheckPoint: {fileID: 227032456}
