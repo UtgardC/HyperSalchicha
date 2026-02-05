@@ -7,6 +7,25 @@ public class PlayerControllerAlt : MonoBehaviour
     public float sprintMultiplier = 2f;
     private float currentMoveSpeed;
 
+    [Header("Sprint / Stamina")]
+    [Tooltip("Usa modo toggle en lugar de mantener la tecla.")]
+    [SerializeField] private bool sprintToggleMode = false;
+    [Tooltip("Nombre del bot\u00f3n en Input Manager (ej: 'Fire3' o 'Sprint'). Deja vac\u00edo para ignorar.")]
+    [SerializeField] private string sprintButton = "Fire3";
+    [Tooltip("Tecla directa usada si no hay InputAction configurado.")]
+    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
+    [Space]
+    [SerializeField] private float maxStamina = 100f;
+    [SerializeField] private float stamina = 100f;
+    [Tooltip("Consumo de estamina por segundo al esprintar.")]
+    [SerializeField] private float sprintDrainPerSecond = 25f;
+    [Tooltip("Regeneraci\u00f3n de estamina por segundo cuando no se esprinta.")]
+    [SerializeField] private float staminaRegenPerSecond = 20f;
+    [Tooltip("Estamina m\u00ednima requerida para poder comenzar a esprintar.")]
+    [SerializeField] private float sprintStartThreshold = 10f;
+    [Header("(Opcional) UI")]
+    [SerializeField] private HyperManzana.UI.UIBarFill staminaBar;
+
     [Header("Salto")]
     public float jumpForce = 7f;
     [Tooltip("Tiempo que se recuerda el input de salto (segundos)")] public float jumpBufferTime = 0.15f;
@@ -29,20 +48,33 @@ public class PlayerControllerAlt : MonoBehaviour
 
     private Rigidbody rb;
 
+    private bool isSprinting;
+    private bool sprintBlockedUntilRelease;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         Cursor.lockState = CursorLockMode.Locked;
         currentMoveSpeed = moveSpeed;
+        ClampStamina();
+        UpdateStaminaUI();
         if (groundCheckPoint == null)
         {
             groundCheckPoint = transform;
         }
     }
 
+    void OnValidate()
+    {
+        ClampStamina();
+        UpdateStaminaUI();
+    }
+
     void Update()
     {
-        HandleInput();
+        HandleSprintInput();
+        HandleJumpInput();
+        UpdateStamina(Time.deltaTime);
     }
 
     void LateUpdate()
@@ -58,23 +90,96 @@ public class PlayerControllerAlt : MonoBehaviour
         ApplyGravity();
     }
 
-    void HandleInput()
+    void HandleSprintInput()
     {
-        // Sprint
-        if (Input.GetKey(KeyCode.LeftShift))
+        bool sprintDown = GetSprintDown();
+        bool sprintUp = GetSprintUp();
+        bool sprintHeld = GetSprintHeld();
+
+        if (sprintBlockedUntilRelease && !sprintHeld)
+            sprintBlockedUntilRelease = false;
+
+        if (sprintToggleMode)
         {
-            currentMoveSpeed = moveSpeed * sprintMultiplier;
+            if (sprintDown && !sprintBlockedUntilRelease && stamina >= sprintStartThreshold)
+                isSprinting = !isSprinting;
         }
         else
         {
-            currentMoveSpeed = moveSpeed;
+            if (!isSprinting && sprintHeld && !sprintBlockedUntilRelease && stamina >= sprintStartThreshold)
+                isSprinting = true;
+
+            if (!sprintHeld)
+                isSprinting = false;
         }
 
-        // Buffer de salto (se registra en Update)
+        if (sprintUp && sprintBlockedUntilRelease)
+            sprintBlockedUntilRelease = false;
+
+        currentMoveSpeed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+    }
+
+    void HandleJumpInput()
+    {
         if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.Space))
         {
             lastJumpPressedTime = Time.time;
         }
+    }
+
+    void UpdateStamina(float dt)
+    {
+        if (isSprinting)
+        {
+            stamina -= sprintDrainPerSecond * dt;
+            if (stamina <= 0f)
+            {
+                stamina = 0f;
+                StopSprintFromExhaustion(GetSprintHeld());
+            }
+        }
+        else
+        {
+            stamina += staminaRegenPerSecond * dt;
+        }
+
+        ClampStamina();
+        UpdateStaminaUI();
+    }
+
+    void StopSprintFromExhaustion(bool sprintHeld)
+    {
+        if (!isSprinting) return;
+
+        isSprinting = false;
+        currentMoveSpeed = moveSpeed;
+
+        if (sprintHeld)
+        {
+            // Evita que el jugador reanude el sprint automÃ¡ticamente hasta soltar la tecla.
+            sprintBlockedUntilRelease = true;
+        }
+    }
+
+    bool GetSprintDown()
+    {
+        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButtonDown(sprintButton);
+        bool key = sprintKey != KeyCode.None && Input.GetKeyDown(sprintKey);
+        return button || key;
+    }
+
+    bool GetSprintUp()
+    {
+        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButtonUp(sprintButton);
+        bool key = sprintKey != KeyCode.None && Input.GetKeyUp(sprintKey);
+        return button || key;
+    }
+
+    bool GetSprintHeld()
+    {
+        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButton(sprintButton);
+        bool key = sprintKey != KeyCode.None && Input.GetKey(sprintKey);
+        return button || key;
     }
 
     void HandleMovement()
@@ -124,6 +229,18 @@ public class PlayerControllerAlt : MonoBehaviour
         Vector3 origin = groundCheckPoint != null ? groundCheckPoint.position : transform.position;
         // Chequeo esférico contra capas de suelo
         isGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
+    }
+
+    void ClampStamina()
+    {
+        if (maxStamina < 1f) maxStamina = 1f;
+        stamina = Mathf.Clamp(stamina, 0f, maxStamina);
+    }
+
+    void UpdateStaminaUI()
+    {
+        if (staminaBar != null)
+            staminaBar.Set(stamina, maxStamina);
     }
 
     void OnDrawGizmosSelected()
