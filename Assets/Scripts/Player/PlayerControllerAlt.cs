@@ -11,9 +11,6 @@ public class PlayerControllerAlt : MonoBehaviour
     [SerializeField] private float groundDeceleration = 60f;
     [Tooltip("Aceleración en aire (m/s²).")]
     [SerializeField] private float airAcceleration = 15f;
-    [Tooltip("Porcentaje de control en aire (0-1).")]
-    [Range(0f, 1f)]
-    [SerializeField] private float airControlPercent = 0.35f;
     [Tooltip("Velocidad mínima base en aire si saltas casi en idle.")]
     [SerializeField] private float minAirSpeed = 2f;
 
@@ -48,6 +45,8 @@ public class PlayerControllerAlt : MonoBehaviour
     [Header("Cámara")]
     public float mouseSensitivity = 100f;
     public Transform cameraTransform;
+    [Tooltip("Pivot para el pitch. Si está vacío, se usa cameraTransform.")]
+    [SerializeField] private Transform cameraPitchPivot;
 
     [Header("Gravedad")]
     public float gravityScale = 1f;
@@ -72,7 +71,8 @@ public class PlayerControllerAlt : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         ClampStamina();
         yaw = transform.eulerAngles.y;
-        pitch = cameraTransform != null ? NormalizeAngle(cameraTransform.localEulerAngles.x) : 0f;
+        Transform pitchTarget = GetPitchTarget();
+        pitch = pitchTarget != null ? NormalizeAngle(pitchTarget.localEulerAngles.x) : 0f;
         if (groundCheckPoint == null)
         {
             groundCheckPoint = transform;
@@ -141,8 +141,9 @@ public class PlayerControllerAlt : MonoBehaviour
 
     void ApplyCameraPitch()
     {
-        if (cameraTransform == null) return;
-        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        Transform pitchTarget = GetPitchTarget();
+        if (pitchTarget == null) return;
+        pitchTarget.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void HandleSprintInput()
@@ -260,6 +261,11 @@ public class PlayerControllerAlt : MonoBehaviour
         airVelocityCaptured = true;
     }
 
+    Transform GetPitchTarget()
+    {
+        return cameraPitchPivot != null ? cameraPitchPivot : cameraTransform;
+    }
+
     void HandleMovement()
     {
         Vector3 moveDirection = GetMoveDirection();
@@ -283,14 +289,29 @@ public class PlayerControllerAlt : MonoBehaviour
             if (!airVelocityCaptured)
                 CaptureAirVelocity(lateralVelocity, moveDirection);
 
-            float inputAmount = Mathf.Clamp01(moveInput.magnitude);
-            Vector3 inputVelocity = moveDirection * airSpeedAtJump;
-            Vector3 desired = Vector3.Lerp(airVelocityAtJump, inputVelocity, airControlPercent * inputAmount);
-
-            lateralVelocity = Vector3.MoveTowards(lateralVelocity, desired, airAcceleration * Time.fixedDeltaTime);
+            if (moveDirection.sqrMagnitude > 0f)
+            {
+                Vector3 desired = moveDirection * airSpeedAtJump;
+                lateralVelocity = Vector3.MoveTowards(lateralVelocity, desired, airAcceleration * Time.fixedDeltaTime);
+            }
         }
 
         rb.linearVelocity = new Vector3(lateralVelocity.x, velocity.y, lateralVelocity.z);
+    }
+
+    public bool IsSprinting => isSprinting;
+    public bool IsGrounded => isGrounded;
+    public Vector2 MoveInput => moveInput;
+    public Vector3 Velocity => rb != null ? rb.linearVelocity : Vector3.zero;
+    public float BaseMoveSpeed => moveSpeed;
+    public float SprintSpeedMultiplier => sprintMultiplier;
+    public float PlanarSpeed
+    {
+        get
+        {
+            Vector3 v = Velocity;
+            return new Vector3(v.x, 0f, v.z).magnitude;
+        }
     }
 
     void ApplyGravity()
