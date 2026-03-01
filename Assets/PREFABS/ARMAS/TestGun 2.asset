@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44114153f5734e4ead89cb7f97d29163, type: 3}
+  m_Name: TestGun 2
+  m_EditorClassIdentifier: 
+  displayName: TEST GUN 2
+  weaponPrefab: {fileID: 3831421875697112312, guid: 19dcd02e2c16c2e498bd3696cdd66c75, type: 3}
+  fireMode: 0
+  damagePerShot: 20
+  fireRateSeconds: 0.05
+  isAutomatic: 1
+  raycastDistance: 150
+  projectilePrefab: {fileID: 0}
+  projectileSpeed: 40
+  magazineCapacity: 50
+  startingMagazineAmmo: 50
+  startingReserveAmmo: 500
+  infiniteMagazine: 0
+  infiniteReserve: 0
+  reloadMode: 0
+  reloadStepAmount: 1
+  triggerSwapOut: SwapOut
+  triggerSwapIn: SwapIn
+  triggerReload: Reload
+  triggerFire: Fire
+  useAnimationEvents: 1
+  swapOutFallbackSeconds: 0.25
+  swapInFallbackSeconds: 0.25
+  reloadFallbackSeconds: 1
+  fireSwapLockSeconds: 0.08
+  useEnhancementVisualOverrides: 0
+  enhancementVisuals:
+    quantumMaterial: {fileID: 0}
+    quantumOverheatedMaterial: {fileID: 0}
+    heatedMaterial: {fileID: 0}
+    overclockDialBase: {fileID: 0}
+    heatedSmokeVfx: {fileID: 0}
+    overclockHeatedAddon: {fileID: 0}
+    overclockDialAnimator: {fileID: 0}
+    quantumDialBool: QuantumMode

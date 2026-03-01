@@ -1,4 +1,5 @@
 using UnityEngine;
+using HyperManzana.Weapons;
 
 public class BulletScript : MonoBehaviour
 {
@@ -11,6 +12,13 @@ public class BulletScript : MonoBehaviour
     [Tooltip("Separar las partículas del proyectil antes de reproducir, para que sigan vivas tras destruir la bala.")]
     [SerializeField] private bool detachParticlesOnHit = true;
 
+    private ProjectileDamagePayload payload;
+
+    private void Awake()
+    {
+        payload = GetComponent<ProjectileDamagePayload>();
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         // Check if the collided object has the "Enemy" tag
@@ -20,7 +28,7 @@ public class BulletScript : MonoBehaviour
             var enemy = collision.gameObject.GetComponent<EnemyScript>();
             if (enemy != null)
             {
-                enemy.TakeDamage(damage);
+                enemy.TakeDamage(GetDamage());
             }
 
             // Play hit particles safely (detached), positioned at contact point
@@ -66,5 +74,10 @@ public class BulletScript : MonoBehaviour
         float maxLifetime = main.startLifetime.constantMax;
         float total = main.duration + maxLifetime + 0.1f;
         Destroy(ps.gameObject, total);
+    }
+
+    private float GetDamage()
+    {
+        return payload != null ? payload.Damage : damage;
     }
 }

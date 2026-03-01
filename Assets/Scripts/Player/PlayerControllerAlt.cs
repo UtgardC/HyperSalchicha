@@ -1,4 +1,5 @@
 using UnityEngine;
+using HyperManzana.Weapons;
 
 public class PlayerControllerAlt : MonoBehaviour
 {
@@ -50,6 +51,8 @@ public class PlayerControllerAlt : MonoBehaviour
 
     [Header("Gravedad")]
     public float gravityScale = 1f;
+    [Header("Dependencias")]
+    [SerializeField] private WeaponManager weaponManager;
 
     private Rigidbody rb;
 
@@ -68,6 +71,8 @@ public class PlayerControllerAlt : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        if (weaponManager == null)
+            weaponManager = GetComponent<WeaponManager>();
         Cursor.lockState = CursorLockMode.Locked;
         ClampStamina();
         yaw = transform.eulerAngles.y;
@@ -148,6 +153,12 @@ public class PlayerControllerAlt : MonoBehaviour
 
     void HandleSprintInput()
     {
+        if (weaponManager != null && weaponManager.BlocksSprint)
+        {
+            isSprinting = false;
+            return;
+        }
+
         bool sprintDown = GetSprintDown();
         bool sprintUp = GetSprintUp();
         bool sprintHeld = GetSprintHeld();

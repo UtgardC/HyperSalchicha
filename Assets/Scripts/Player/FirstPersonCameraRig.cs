@@ -206,9 +206,16 @@ public class FirstPersonCameraRig : MonoBehaviour
 
     public void Event_PlayKick(int presetIndex)
     {
+        Event_PlayKickScaled(presetIndex, 1f, 1f);
+    }
+
+    public void Event_PlayKickScaled(int presetIndex, float positionMultiplier, float rotationMultiplier)
+    {
         if (kickPresets == null) return;
         if (presetIndex < 0 || presetIndex >= kickPresets.Length) return;
         var preset = kickPresets[presetIndex];
-        AddImpulse(preset.position, preset.rotation);
+        AddImpulse(
+            preset.position * Mathf.Max(0f, positionMultiplier),
+            preset.rotation * Mathf.Max(0f, rotationMultiplier));
     }
 }

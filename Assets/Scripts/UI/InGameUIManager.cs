@@ -14,11 +14,22 @@ public class InGameUIManager : MonoBehaviour
     [SerializeField] private RectTransform cuajosTextAnchor;
     [SerializeField] private GameObject operationTextPrefab;
 
+    [Header("Weapons (optional)")]
+    [SerializeField] private TextMeshProUGUI magazineDisplay;
+    [SerializeField] private TextMeshProUGUI reserveDisplay;
+    [SerializeField] private TextMeshProUGUI weaponNameDisplay;
+    [SerializeField] private float weaponNameVisibleSeconds = 3f;
+    [SerializeField] private float weaponNameFadeSeconds = 0.35f;
+    [SerializeField] private Ease weaponNameFadeEase = Ease.InOutSine;
+
     private Vector3 originalScale;
+    private Tween weaponNameFadeTween;
 
     private void Awake()
     {
         originalScale = currentRoundDisplay.transform.localScale;
+        if (weaponNameDisplay != null)
+            weaponNameDisplay.alpha = 0f;
     }
 
     public void UpdateCurrentRoundDisplay(int round)
@@ -58,5 +69,42 @@ public class InGameUIManager : MonoBehaviour
                 text.color = Color.red;
             }
         }
+    }
+
+    public void UpdateAmmoDisplay(int magazine, int reserve)
+    {
+        if (magazineDisplay != null)
+            magazineDisplay.text = magazine.ToString();
+        if (reserveDisplay != null)
+            reserveDisplay.text = reserve.ToString();
+    }
+
+    public void UpdateWeaponNameDisplay(string displayName)
+    {
+        if (weaponNameDisplay == null)
+            return;
+
+        if (weaponNameFadeTween != null)
+        {
+            weaponNameFadeTween.Kill();
+            weaponNameFadeTween = null;
+        }
+
+        if (string.IsNullOrEmpty(displayName))
+        {
+            weaponNameDisplay.text = string.Empty;
+            weaponNameDisplay.alpha = 0f;
+            return;
+        }
+
+        weaponNameDisplay.text = displayName;
+        weaponNameDisplay.alpha = 1f;
+        weaponNameFadeTween = DOTween.To(
+                () => weaponNameDisplay.alpha,
+                value => weaponNameDisplay.alpha = value,
+                0f,
+                weaponNameFadeSeconds)
+            .SetDelay(Mathf.Max(0f, weaponNameVisibleSeconds))
+            .SetEase(weaponNameFadeEase);
     }
 }

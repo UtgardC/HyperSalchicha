@@ -2,34 +2,16 @@ using UnityEngine;
 
 namespace HyperManzana.Player
 {
-
-    [AddComponentMenu("HyperManzana/Player/Weapon Animation Relay")]
-    public class WeaponAnimationRelay : MonoBehaviour
+    [System.Obsolete("Legacy relay. Use direct animation events on WeaponController and SMB scripts.")]
+    [AddComponentMenu("")]
+    public sealed class WeaponAnimationRelay : MonoBehaviour
     {
-        private PlayerWeapons playerWeapons;
-
-        private void Awake()
-        {
-            playerWeapons = GetComponentInParent<PlayerWeapons>();
-        }
-
-        public void Event_ReloadComplete()
-        {
-            if (playerWeapons != null)
-                playerWeapons.OnAnimReloadComplete(gameObject);
-        }
-
-        public void Event_UnequipComplete()
-        {
-            if (playerWeapons != null)
-                playerWeapons.OnAnimUnequipComplete(gameObject);
-        }
-
-        public void Event_EquipComplete()
-        {
-            if (playerWeapons != null)
-                playerWeapons.OnAnimEquipComplete(gameObject);
-        }
+        public void Event_SwapOutFinished() { }
+        public void Event_Equipped() { }
+        public void Event_ReloadStep() { }
+        public void Event_ReloadAnimFinished() { }
+        public void Event_UnequipComplete() { }
+        public void Event_EquipComplete() { }
+        public void Event_ReloadComplete() { }
     }
 }
-
