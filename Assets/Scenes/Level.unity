@@ -12236,10 +12236,9 @@ MonoBehaviour:
   swayAmount: 0.05
   smoothAmount: 5
   rotationSwayMultiplier: 30
-  playerController: {fileID: 0}
+  playerController: {fileID: 2116900886}
   sensitivityReference: 100
-  sensitivityMultiplier: 1
-  sensitivityFineMultiplier: 1
+  sensitivityMultiplier: 7
 --- !u!1 &1420078880
 GameObject:
   m_ObjectHideFlags: 0
@@ -12894,6 +12893,7 @@ MonoBehaviour:
   magazineDisplay: {fileID: 1764524047}
   reserveDisplay: {fileID: 1561675802}
   weaponNameDisplay: {fileID: 676581629}
+  ammoZeroColor: {r: 1, g: 0.45, b: 0.45, a: 1}
   weaponNameVisibleSeconds: 3
   weaponNameFadeSeconds: 0.35
   weaponNameFadeEase: 4
@@ -19275,6 +19275,7 @@ MonoBehaviour:
   startingWeaponSlot1: {fileID: 11400000, guid: 9054887f847213b4e9a025f29d78d5a1, type: 2}
   startingWeaponSlot2: {fileID: 11400000, guid: 2b92b8fbc91da8445b440c6984b2b800, type: 2}
   startEquippedSlot: 0
+  sharedWeaponAudio: {fileID: 0}
   inputActionsAsset: {fileID: -944628639613478452, guid: 49ab0f7fbabdc1c48b16f2c5dbea0f98, type: 3}
   gameplayActionMap: Gameplay
   fireActionName: Fire

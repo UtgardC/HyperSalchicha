@@ -15,6 +15,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private Transform firePoint;
         [SerializeField] private WeaponVisibleBullets visibleBullets;
         [SerializeField] private WeaponCameraRecoil weaponCameraRecoil;
+        [SerializeField] private IndexedWeaponAudioPlayer weaponAudio;
 
         [Header("Animator Parameters")]
         [SerializeField] private string isEquippedParam = "IsEquipped";
@@ -22,7 +23,6 @@ namespace HyperManzana.Weapons
         [SerializeField] private string fireTriggerParam = "Fire";
 
         [Header("Combat / Hitscan")]
-        [SerializeField] private LayerMask hitscanMask = ~0;
         [SerializeField] private QueryTriggerInteraction hitscanTriggers = QueryTriggerInteraction.Ignore;
 
         [Header("Camera Kick")]
@@ -30,6 +30,10 @@ namespace HyperManzana.Weapons
         [SerializeField] private float cameraKickPositionMultiplier = 1f;
         [SerializeField] private float cameraKickRotationMultiplier = 1f;
         [SerializeField] private float cameraKickDurationMultiplier = 1f;
+
+        [Header("Audio")]
+        [SerializeField] private int emptyMagazineAudioIndex = -1;
+        [SerializeField] private float emptyMagazineAudioCooldown = 0.1f;
 
         [Header("Debug")]
         [SerializeField] private bool logWarnings = true;
@@ -44,6 +48,10 @@ namespace HyperManzana.Weapons
         private bool isEquippedLocal;
         private bool isReloadingLocal;
         private bool reloadStepAppliedThisCycle;
+        private float nextEmptyMagazineAudioTime;
+        private readonly RaycastHit[] hitscanBuffer = new RaycastHit[32];
+        private PlayerControllerAlt ownerPlayerController;
+        private int enemyLayerMask;
 
         public event Action<WeaponController, int, int> AmmoChanged;
 
@@ -57,6 +65,7 @@ namespace HyperManzana.Weapons
         private void Awake()
         {
             CacheMissingReferences();
+            CacheEnemyLayerMask();
         }
 
         private void Reset()
@@ -70,6 +79,7 @@ namespace HyperManzana.Weapons
             weaponDefinition = definition;
             slotIndex = index;
             CacheMissingReferences();
+            ownerPlayerController = ownerManager != null ? ownerManager.GetComponent<PlayerControllerAlt>() : null;
 
             if (weaponDefinition == null)
             {
@@ -89,6 +99,7 @@ namespace HyperManzana.Weapons
             inputEnabled = false;
             waitForFireReleaseAfterReloadCancel = false;
             reloadStepAppliedThisCycle = false;
+            nextEmptyMagazineAudioTime = 0f;
             SetAnimatorBool(isReloadingParam, false);
             SetAnimatorBool(isEquippedParam, false);
             SyncVisibleBullets();
@@ -170,6 +181,12 @@ namespace HyperManzana.Weapons
             if (!wantsToShoot)
                 return;
 
+            if (!HasAmmoToShoot())
+            {
+                TryPlayEmptyMagazineAudio();
+                return;
+            }
+
             TryShoot();
         }
 
@@ -196,6 +213,20 @@ namespace HyperManzana.Weapons
                     Mathf.Max(0f, cameraKickRotationMultiplier),
                     Mathf.Max(0.01f, cameraKickDurationMultiplier));
             }
+        }
+
+        public void OnAudioEvent(int eventIndex)
+        {
+            if (weaponAudio == null)
+                CacheMissingReferences();
+            if (weaponAudio == null)
+                return;
+            weaponAudio.PlayByIndex(eventIndex);
+        }
+
+        public void OnSharedAudioEvent(int eventIndex)
+        {
+            ownerManager?.PlaySharedAudioEvent(eventIndex);
         }
 
         public void OnBulletInserted()
@@ -317,13 +348,8 @@ namespace HyperManzana.Weapons
                 return;
             }
 
-            if (Physics.Raycast(
-                    origin.position,
-                    origin.forward,
-                    out RaycastHit hit,
-                    weaponDefinition.raycastDistance,
-                    hitscanMask,
-                    hitscanTriggers))
+            GetHitscanRay(out Vector3 rayOrigin, out Vector3 rayDirection);
+            if (TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
             {
                 EnemyScript enemy = hit.collider.GetComponentInParent<EnemyScript>();
                 if (enemy != null)
@@ -406,6 +432,8 @@ namespace HyperManzana.Weapons
                 animator = GetComponentInChildren<Animator>(true);
             if (visibleBullets == null)
                 visibleBullets = GetComponentInChildren<WeaponVisibleBullets>(true);
+            if (weaponAudio == null)
+                weaponAudio = GetComponentInChildren<IndexedWeaponAudioPlayer>(true);
             if (firePoint == null)
                 firePoint = transform;
             if (weaponCameraRecoil == null)
@@ -421,6 +449,88 @@ namespace HyperManzana.Weapons
                     }
                 }
             }
+        }
+
+        private void CacheEnemyLayerMask()
+        {
+            int enemyLayer = LayerMask.NameToLayer("Enemy");
+            if (enemyLayer < 0)
+            {
+                Debug.LogError("[WeaponController] Layer 'Enemy' no existe.", this);
+                enemyLayerMask = 0;
+                return;
+            }
+
+            enemyLayerMask = 1 << enemyLayer;
+        }
+
+        private bool TryFindHitscanHit(
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            QueryTriggerInteraction triggerMode,
+            out RaycastHit bestHit)
+        {
+            bestHit = default;
+            if (weaponDefinition == null || enemyLayerMask == 0)
+                return false;
+
+            int hitCount = Physics.RaycastNonAlloc(
+                rayOrigin,
+                rayDirection,
+                hitscanBuffer,
+                weaponDefinition.raycastDistance,
+                enemyLayerMask,
+                triggerMode);
+            if (hitCount <= 0)
+                return false;
+
+            float bestDistance = float.MaxValue;
+            bool found = false;
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = hitscanBuffer[i];
+                if (hit.collider == null)
+                    continue;
+
+                if (hit.distance < bestDistance)
+                {
+                    bestDistance = hit.distance;
+                    bestHit = hit;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private void GetHitscanRay(out Vector3 rayOrigin, out Vector3 rayDirection)
+        {
+            if (ownerPlayerController != null && ownerPlayerController.cameraTransform != null)
+            {
+                rayOrigin = ownerPlayerController.cameraTransform.position;
+                rayDirection = ownerPlayerController.cameraTransform.forward;
+                return;
+            }
+
+            Transform origin = firePoint != null ? firePoint : transform;
+
+            rayOrigin = origin.position;
+            rayDirection = origin.forward;
+        }
+
+        private void TryPlayEmptyMagazineAudio()
+        {
+            if (emptyMagazineAudioIndex < 0)
+                return;
+            if (Time.time < nextEmptyMagazineAudioTime)
+                return;
+            if (weaponAudio == null)
+                CacheMissingReferences();
+            if (weaponAudio == null)
+                return;
+
+            weaponAudio.PlayByIndex(emptyMagazineAudioIndex);
+            nextEmptyMagazineAudioTime = Time.time + Mathf.Max(0.01f, emptyMagazineAudioCooldown);
         }
 
         private void LogWarn(string message)

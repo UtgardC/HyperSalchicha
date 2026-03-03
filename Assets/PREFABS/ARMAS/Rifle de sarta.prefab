@@ -8559,17 +8559,22 @@ MonoBehaviour:
   firePoint: {fileID: 1479114623403267417}
   visibleBullets: {fileID: 0}
   weaponCameraRecoil: {fileID: 0}
+  weaponAudio: {fileID: 0}
   isEquippedParam: IsEquipped
   isReloadingParam: IsReloading
   fireTriggerParam: Fire
   hitscanMask:
     serializedVersion: 2
     m_Bits: 64
-  hitscanTriggers: 2
+  hitscanTriggers: 1
+  ignoreOwnerColliders: 1
+  tryTriggerFallbackWhenNoHit: 0
   cameraKickPresetIndex: 1
   cameraKickPositionMultiplier: 1
   cameraKickRotationMultiplier: 1
   cameraKickDurationMultiplier: 1
+  emptyMagazineAudioIndex: -1
+  emptyMagazineAudioCooldown: 0.1
   logWarnings: 1
 --- !u!1 &3963976958865494577
 GameObject:

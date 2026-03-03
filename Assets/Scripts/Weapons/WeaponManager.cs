@@ -23,6 +23,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private WeaponDefinition startingWeaponSlot1;
         [SerializeField] private WeaponDefinition startingWeaponSlot2;
         [SerializeField] private int startEquippedSlot;
+        [SerializeField] private IndexedWeaponAudioPlayer sharedWeaponAudio;
 
 #if ENABLE_INPUT_SYSTEM
         [Header("Input Asset (required)")]
@@ -249,6 +250,13 @@ namespace HyperManzana.Weapons
         public void SetExternalFireRateMultiplier(float multiplier)
         {
             externalFireRateMultiplier = Mathf.Max(0.01f, multiplier);
+        }
+
+        public void PlaySharedAudioEvent(int eventIndex)
+        {
+            if (sharedWeaponAudio == null)
+                return;
+            sharedWeaponAudio.PlayByIndex(eventIndex);
         }
 
         private void ToggleWeapon()

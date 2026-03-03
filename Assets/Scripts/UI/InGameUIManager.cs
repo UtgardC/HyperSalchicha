@@ -18,16 +18,23 @@ public class InGameUIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI magazineDisplay;
     [SerializeField] private TextMeshProUGUI reserveDisplay;
     [SerializeField] private TextMeshProUGUI weaponNameDisplay;
+    [SerializeField] private Color ammoZeroColor = new Color(1f, 0.45f, 0.45f, 1f);
     [SerializeField] private float weaponNameVisibleSeconds = 3f;
     [SerializeField] private float weaponNameFadeSeconds = 0.35f;
     [SerializeField] private Ease weaponNameFadeEase = Ease.InOutSine;
 
     private Vector3 originalScale;
     private Tween weaponNameFadeTween;
+    private Color magazineDefaultColor = Color.white;
+    private Color reserveDefaultColor = Color.white;
 
     private void Awake()
     {
         originalScale = currentRoundDisplay.transform.localScale;
+        if (magazineDisplay != null)
+            magazineDefaultColor = magazineDisplay.color;
+        if (reserveDisplay != null)
+            reserveDefaultColor = reserveDisplay.color;
         if (weaponNameDisplay != null)
             weaponNameDisplay.alpha = 0f;
     }
@@ -74,9 +81,15 @@ public class InGameUIManager : MonoBehaviour
     public void UpdateAmmoDisplay(int magazine, int reserve)
     {
         if (magazineDisplay != null)
+        {
             magazineDisplay.text = magazine.ToString();
+            magazineDisplay.color = magazine <= 0 ? ammoZeroColor : magazineDefaultColor;
+        }
         if (reserveDisplay != null)
+        {
             reserveDisplay.text = reserve.ToString();
+            reserveDisplay.color = reserve <= 0 ? ammoZeroColor : reserveDefaultColor;
+        }
     }
 
     public void UpdateWeaponNameDisplay(string displayName)
