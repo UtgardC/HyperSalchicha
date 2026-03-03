@@ -21,22 +21,13 @@ MonoBehaviour:
   raycastDistance: 150
   projectilePrefab: {fileID: 0}
   projectileSpeed: 40
-  magazineCapacity: 50
-  startingMagazineAmmo: 50
-  startingReserveAmmo: 500
+  magazineCapacity: 8
+  startingMagazineAmmo: 8
+  startingReserveAmmo: 24
   infiniteMagazine: 0
   infiniteReserve: 0
-  reloadMode: 0
+  reloadMode: 1
   reloadStepAmount: 1
-  triggerSwapOut: SwapOut
-  triggerSwapIn: SwapIn
-  triggerReload: Reload
-  triggerFire: Fire
-  useAnimationEvents: 1
-  swapOutFallbackSeconds: 0.25
-  swapInFallbackSeconds: 0.25
-  reloadFallbackSeconds: 1
-  fireSwapLockSeconds: 0.08
   useEnhancementVisualOverrides: 0
   enhancementVisuals:
     quantumMaterial: {fileID: 0}

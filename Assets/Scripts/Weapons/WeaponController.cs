@@ -14,7 +14,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private Animator animator;
         [SerializeField] private Transform firePoint;
         [SerializeField] private WeaponVisibleBullets visibleBullets;
-        [SerializeField] private FirstPersonCameraRig cameraRig;
+        [SerializeField] private WeaponCameraRecoil weaponCameraRecoil;
 
         [Header("Animator Parameters")]
         [SerializeField] private string isEquippedParam = "IsEquipped";
@@ -29,6 +29,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private int cameraKickPresetIndex;
         [SerializeField] private float cameraKickPositionMultiplier = 1f;
         [SerializeField] private float cameraKickRotationMultiplier = 1f;
+        [SerializeField] private float cameraKickDurationMultiplier = 1f;
 
         [Header("Debug")]
         [SerializeField] private bool logWarnings = true;
@@ -184,11 +185,17 @@ namespace HyperManzana.Weapons
 
         public void OnCameraKick()
         {
-            if (cameraRig != null)
-                cameraRig.Event_PlayKickScaled(
+            if (weaponCameraRecoil == null)
+                CacheMissingReferences();
+
+            if (weaponCameraRecoil != null)
+            {
+                weaponCameraRecoil.Event_PlayKickScaled(
                     cameraKickPresetIndex,
                     Mathf.Max(0f, cameraKickPositionMultiplier),
-                    Mathf.Max(0f, cameraKickRotationMultiplier));
+                    Mathf.Max(0f, cameraKickRotationMultiplier),
+                    Mathf.Max(0.01f, cameraKickDurationMultiplier));
+            }
         }
 
         public void OnBulletInserted()
@@ -401,15 +408,15 @@ namespace HyperManzana.Weapons
                 visibleBullets = GetComponentInChildren<WeaponVisibleBullets>(true);
             if (firePoint == null)
                 firePoint = transform;
-            if (cameraRig == null)
+            if (weaponCameraRecoil == null)
             {
-                cameraRig = GetComponentInParent<FirstPersonCameraRig>();
-                if (cameraRig == null)
+                weaponCameraRecoil = GetComponentInParent<WeaponCameraRecoil>();
+                if (weaponCameraRecoil == null)
                 {
                     Transform cursor = transform.parent;
-                    while (cursor != null && cameraRig == null)
+                    while (cursor != null && weaponCameraRecoil == null)
                     {
-                        cameraRig = cursor.GetComponentInChildren<FirstPersonCameraRig>(true);
+                        weaponCameraRecoil = cursor.GetComponentInChildren<WeaponCameraRecoil>(true);
                         cursor = cursor.parent;
                     }
                 }

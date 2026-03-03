@@ -5330,7 +5330,7 @@ GameObject:
   - component: {fileID: 707225994335537596}
   - component: {fileID: 6617954459251788792}
   m_Layer: 0
-  m_Name: TestGun 2
+  m_Name: Shotgun
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5345,7 +5345,7 @@ Transform:
   m_GameObject: {fileID: 3831421875697112312}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -1}
   m_LocalScale: {x: 0.28699, y: 0.28699005, z: 0.28699008}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8438,14 +8438,18 @@ MonoBehaviour:
   animator: {fileID: 2548463096817286404}
   firePoint: {fileID: 1479114623403267417}
   visibleBullets: {fileID: 0}
-  cameraRig: {fileID: 0}
+  weaponCameraRecoil: {fileID: 0}
   isEquippedParam: IsEquipped
   isReloadingParam: IsReloading
+  fireTriggerParam: Fire
   hitscanMask:
     serializedVersion: 2
     m_Bits: 64
   hitscanTriggers: 2
-  cameraKickPresetIndex: 2
+  cameraKickPresetIndex: 0
+  cameraKickPositionMultiplier: 1
+  cameraKickRotationMultiplier: 1
+  cameraKickDurationMultiplier: 1
   logWarnings: 1
 --- !u!1 &3963976958865494577
 GameObject:
