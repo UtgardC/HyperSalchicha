@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44114153f5734e4ead89cb7f97d29163, type: 3}
-  m_Name: TestGun 2
+  m_Name: Shotgun
   m_EditorClassIdentifier: 
-  displayName: TEST GUN 2
+  displayName: Shotgun
   weaponPrefab: {fileID: 3831421875697112312, guid: 19dcd02e2c16c2e498bd3696cdd66c75, type: 3}
   fireMode: 0
   damagePerShot: 20
-  fireRateSeconds: 0.05
-  isAutomatic: 1
+  fireRateSeconds: 0.7
+  isAutomatic: 0
   raycastDistance: 150
   projectilePrefab: {fileID: 0}
   projectileSpeed: 40

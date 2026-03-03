@@ -5330,7 +5330,7 @@ GameObject:
   - component: {fileID: 707225994335537596}
   - component: {fileID: 6617954459251788792}
   m_Layer: 0
-  m_Name: TestGun 3
+  m_Name: Rifle de sarta
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

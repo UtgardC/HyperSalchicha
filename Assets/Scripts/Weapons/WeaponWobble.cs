@@ -6,6 +6,10 @@ public class WeaponWooble : MonoBehaviour
     [SerializeField] private float swayAmount = 0.05f;
     [SerializeField] private float smoothAmount = 5f;
     [SerializeField] private float rotationSwayMultiplier = 30f;
+    [Header("Sensitivity Link")]
+    [SerializeField] private PlayerControllerAlt playerController;
+    [SerializeField] private float sensitivityReference = 100f;
+    [SerializeField] private float sensitivityMultiplier = 1f;
 
     private Vector3 initialPosition;
     private Quaternion initialRotation;
@@ -23,9 +27,17 @@ public class WeaponWooble : MonoBehaviour
 
     void ApplySway()
     {
+        float sensitivityFactor = 1f;
+        if (playerController != null)
+        {
+            float reference = Mathf.Max(0.0001f, sensitivityReference);
+            float baseFactor = playerController.mouseSensitivity / reference;
+            sensitivityFactor = baseFactor * sensitivityMultiplier;
+        }
+
         // Get mouse input
-        float mouseX = Input.GetAxis("Mouse X") * swayAmount;
-        float mouseY = Input.GetAxis("Mouse Y") * swayAmount;
+        float mouseX = Input.GetAxis("Mouse X") * swayAmount * sensitivityFactor;
+        float mouseY = Input.GetAxis("Mouse Y") * swayAmount * sensitivityFactor;
 
         // Calculate position offset
         Vector3 positionOffset = new Vector3(-mouseX, -mouseY, 0f);

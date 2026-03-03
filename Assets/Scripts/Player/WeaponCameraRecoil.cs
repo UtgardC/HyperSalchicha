@@ -48,6 +48,8 @@ public class WeaponCameraRecoil : MonoBehaviour
     {
         if (recoilPivot == null)
             return;
+        if (Time.timeScale <= 0f)
+            return;
 
         float returnTime = Mathf.Max(minReturnSeconds, activeReturnSeconds);
         recoilPos = Vector3.SmoothDamp(recoilPos, Vector3.zero, ref recoilPosVelocity, returnTime);

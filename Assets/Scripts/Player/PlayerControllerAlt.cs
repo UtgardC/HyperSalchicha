@@ -1,5 +1,8 @@
 using UnityEngine;
 using HyperManzana.Weapons;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class PlayerControllerAlt : MonoBehaviour
 {
@@ -18,10 +21,6 @@ public class PlayerControllerAlt : MonoBehaviour
     [Header("Sprint / Stamina")]
     [Tooltip("Usa modo toggle en lugar de mantener la tecla.")]
     [SerializeField] private bool sprintToggleMode = false;
-    [Tooltip("Nombre del bot\u00f3n en Input Manager (ej: 'Fire3' o 'Sprint'). Deja vac\u00edo para ignorar.")]
-    [SerializeField] private string sprintButton = "Fire3";
-    [Tooltip("Tecla directa usada si no hay InputAction configurado.")]
-    [SerializeField] private KeyCode sprintKey = KeyCode.LeftShift;
     [Space]
     [SerializeField] private float maxStamina = 100f;
     [SerializeField] private float stamina = 100f;
@@ -51,6 +50,13 @@ public class PlayerControllerAlt : MonoBehaviour
 
     [Header("Gravedad")]
     public float gravityScale = 1f;
+    [Header("Input Asset (required)")]
+    [SerializeField] private InputActionAsset inputActionsAsset;
+    [SerializeField] private string gameplayActionMap = "Gameplay";
+    [SerializeField] private string moveActionName = "Move";
+    [SerializeField] private string lookActionName = "Look";
+    [SerializeField] private string jumpActionName = "Jump";
+    [SerializeField] private string sprintActionName = "Sprint";
     [Header("Dependencias")]
     [SerializeField] private WeaponManager weaponManager;
 
@@ -68,11 +74,36 @@ public class PlayerControllerAlt : MonoBehaviour
     private Vector3 airVelocityAtJump;
     private float airSpeedAtJump;
 
-    void Start()
+#if ENABLE_INPUT_SYSTEM
+    private InputAction moveAction;
+    private InputAction lookAction;
+    private InputAction jumpAction;
+    private InputAction sprintAction;
+#endif
+
+    void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        if (weaponManager == null)
-            weaponManager = GetComponent<WeaponManager>();
+        if (!ValidateWiring())
+        {
+            enabled = false;
+            return;
+        }
+#if ENABLE_INPUT_SYSTEM
+        if (!ResolveInputActions())
+        {
+            enabled = false;
+            return;
+        }
+#else
+        Debug.LogError("[PlayerControllerAlt] ENABLE_INPUT_SYSTEM está deshabilitado.", this);
+        enabled = false;
+        return;
+#endif
+    }
+
+    void Start()
+    {
         Cursor.lockState = CursorLockMode.Locked;
         ClampStamina();
         yaw = transform.eulerAngles.y;
@@ -84,6 +115,20 @@ public class PlayerControllerAlt : MonoBehaviour
         }
     }
 
+    void OnEnable()
+    {
+#if ENABLE_INPUT_SYSTEM
+        EnableInputActions();
+#endif
+    }
+
+    void OnDisable()
+    {
+#if ENABLE_INPUT_SYSTEM
+        DisableInputActions();
+#endif
+    }
+
     void OnValidate()
     {
         ClampStamina();
@@ -91,16 +136,18 @@ public class PlayerControllerAlt : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale <= 0f)
+        {
+            moveInput = Vector2.zero;
+            lookInput = Vector2.zero;
+            return;
+        }
+
         ReadInput();
         HandleSprintInput();
         HandleJumpInput();
         UpdateStamina(Time.deltaTime);
-        UpdateLook();
-    }
-
-    void LateUpdate()
-    {
-        ApplyCameraPitch();
+        UpdateLookAndApplyRotation();
     }
 
     void FixedUpdate()
@@ -109,46 +156,27 @@ public class PlayerControllerAlt : MonoBehaviour
         HandleMovement();
         HandleJump();
         ApplyGravity();
-        ApplyYawRotation();
     }
 
     void ReadInput()
     {
-        moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        lookInput = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        moveInput = moveAction.ReadValue<Vector2>();
+        lookInput = lookAction.ReadValue<Vector2>();
     }
 
-    void UpdateLook()
+    void UpdateLookAndApplyRotation()
     {
-        float mouseX = lookInput.x * mouseSensitivity * 0.02f;
-        float mouseY = lookInput.y * mouseSensitivity * 0.02f;
+        float lookScale = mouseSensitivity * 0.02f;
+        Vector2 lookDelta = lookInput * lookScale;
 
-        yaw += mouseX;
-        pitch -= mouseY;
+        yaw += lookDelta.x;
+        pitch -= lookDelta.y;
         pitch = Mathf.Clamp(pitch, -90f, 90f);
-    }
 
-    void ApplyYawRotation()
-    {
-        Quaternion target = Quaternion.Euler(0f, yaw, 0f);
-        if (rb == null)
-        {
-            transform.rotation = target;
-            return;
-        }
-
-        bool freezeYaw = (rb.constraints & RigidbodyConstraints.FreezeRotationY) != 0;
-        if (freezeYaw)
-            transform.rotation = target;
-        else
-            rb.MoveRotation(target);
-    }
-
-    void ApplyCameraPitch()
-    {
+        transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         Transform pitchTarget = GetPitchTarget();
-        if (pitchTarget == null) return;
-        pitchTarget.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+        if (pitchTarget != null)
+            pitchTarget.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 
     void HandleSprintInput()
@@ -187,7 +215,7 @@ public class PlayerControllerAlt : MonoBehaviour
 
     void HandleJumpInput()
     {
-        if (Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.Space))
+        if (GetJumpDown())
         {
             lastJumpPressedTime = Time.time;
         }
@@ -227,23 +255,22 @@ public class PlayerControllerAlt : MonoBehaviour
 
     bool GetSprintDown()
     {
-        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButtonDown(sprintButton);
-        bool key = sprintKey != KeyCode.None && Input.GetKeyDown(sprintKey);
-        return button || key;
+        return sprintAction.WasPressedThisFrame();
     }
 
     bool GetSprintUp()
     {
-        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButtonUp(sprintButton);
-        bool key = sprintKey != KeyCode.None && Input.GetKeyUp(sprintKey);
-        return button || key;
+        return sprintAction.WasReleasedThisFrame();
     }
 
     bool GetSprintHeld()
     {
-        bool button = !string.IsNullOrEmpty(sprintButton) && Input.GetButton(sprintButton);
-        bool key = sprintKey != KeyCode.None && Input.GetKey(sprintKey);
-        return button || key;
+        return sprintAction.IsPressed();
+    }
+
+    bool GetJumpDown()
+    {
+        return jumpAction.WasPressedThisFrame();
     }
 
     Vector3 GetMoveDirection()
@@ -376,4 +403,98 @@ public class PlayerControllerAlt : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawLine(origin, origin + Vector3.down * groundRayLength);
     }
+
+    private bool ValidateWiring()
+    {
+        bool ok = true;
+        if (rb == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta Rigidbody en el player.", this);
+            ok = false;
+        }
+        if (cameraTransform == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta referencia: cameraTransform.", this);
+            ok = false;
+        }
+        if (inputActionsAsset == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta referencia: inputActionsAsset.", this);
+            ok = false;
+        }
+        if (string.IsNullOrWhiteSpace(gameplayActionMap))
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta valor: gameplayActionMap.", this);
+            ok = false;
+        }
+        return ok;
+    }
+
+#if ENABLE_INPUT_SYSTEM
+    private bool ResolveInputActions()
+    {
+        InputActionMap map = inputActionsAsset.FindActionMap(gameplayActionMap, false);
+        if (map == null)
+        {
+            Debug.LogError($"[PlayerControllerAlt] No existe ActionMap '{gameplayActionMap}'.", this);
+            return false;
+        }
+
+        moveAction = map.FindAction(moveActionName, false);
+        lookAction = map.FindAction(lookActionName, false);
+        jumpAction = map.FindAction(jumpActionName, false);
+        sprintAction = map.FindAction(sprintActionName, false);
+
+        if (moveAction == null)
+        {
+            Debug.LogError($"[PlayerControllerAlt] Falta action '{moveActionName}'.", this);
+            return false;
+        }
+        if (lookAction == null)
+        {
+            Debug.LogError($"[PlayerControllerAlt] Falta action '{lookActionName}'.", this);
+            return false;
+        }
+        if (jumpAction == null)
+        {
+            Debug.LogError($"[PlayerControllerAlt] Falta action '{jumpActionName}'.", this);
+            return false;
+        }
+        if (sprintAction == null)
+        {
+            Debug.LogError($"[PlayerControllerAlt] Falta action '{sprintActionName}'.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void EnableInputActions()
+    {
+        EnableAction(moveAction);
+        EnableAction(lookAction);
+        EnableAction(jumpAction);
+        EnableAction(sprintAction);
+    }
+
+    private void DisableInputActions()
+    {
+        DisableAction(moveAction);
+        DisableAction(lookAction);
+        DisableAction(jumpAction);
+        DisableAction(sprintAction);
+    }
+
+    private static void EnableAction(InputAction action)
+    {
+        if (action != null && !action.enabled)
+            action.Enable();
+    }
+
+    private static void DisableAction(InputAction action)
+    {
+        if (action != null && action.enabled)
+            action.Disable();
+    }
+#endif
 }

@@ -35,15 +35,14 @@ namespace HyperManzana.Weapons
         [SerializeField] private string toggleWeaponActionName = "ToggleWeapon";
 #endif
 
-        [Header("Debug")]
-        [SerializeField] private bool logWarnings = true;
-
         private readonly WeaponSlotRuntime[] slots = new WeaponSlotRuntime[2];
         private int equippedSlot = -1;
         private int pendingSlot = -1;
         private WeaponController holsteringWeapon;
         private bool globalInfiniteMagazinePowerupActive;
         private float externalFireRateMultiplier = 1f;
+        private bool inputsSuppressedByPause;
+        private bool waitForFireReleaseAfterPause;
 
 #if ENABLE_INPUT_SYSTEM
         private InputAction fireAction;
@@ -64,17 +63,25 @@ namespace HyperManzana.Weapons
 
         private void Awake()
         {
-            if (weaponRoot == null)
-                weaponRoot = transform;
+            if (!ValidateWiring())
+            {
+                enabled = false;
+                return;
+            }
 
             for (int i = 0; i < slots.Length; i++)
                 slots[i] = new WeaponSlotRuntime();
 
 #if ENABLE_INPUT_SYSTEM
-            ResolveInputActions();
+            if (!ResolveInputActions())
+            {
+                enabled = false;
+                return;
+            }
             EnableInputActions();
 #else
-            LogWarn("ENABLE_INPUT_SYSTEM is disabled. Weapon inputs will not work.");
+            Debug.LogError("[WeaponManager] ENABLE_INPUT_SYSTEM está deshabilitado.", this);
+            enabled = false;
 #endif
         }
 
@@ -105,8 +112,18 @@ namespace HyperManzana.Weapons
 #endif
         }
 
+        private void OnDisable()
+        {
+#if ENABLE_INPUT_SYSTEM
+            DisableInputActions();
+#endif
+        }
+
         private void Update()
         {
+            if (ShouldBlockInputThisFrame())
+                return;
+
             HandleEquipInput();
             HandleCombatInput();
         }
@@ -268,16 +285,20 @@ namespace HyperManzana.Weapons
             RemoveWeaponFromSlot(slotIndex);
             if (definition == null || definition.weaponPrefab == null)
             {
-                LogWarn($"Invalid definition/prefab for slot {slotIndex}.");
+                Debug.LogError($"[WeaponManager] Invalid definition/prefab for slot {slotIndex}.", this);
                 return;
             }
 
             GameObject weaponObject = Instantiate(definition.weaponPrefab, weaponRoot);
-            WeaponController controller = weaponObject.GetComponent<WeaponController>();
+            WeaponController controller = weaponObject.GetComponentInChildren<WeaponController>(true);
             if (controller == null)
-                controller = weaponObject.GetComponentInChildren<WeaponController>(true);
-            if (controller == null)
-                controller = weaponObject.AddComponent<WeaponController>();
+            {
+                Debug.LogError(
+                    $"[WeaponManager] El prefab '{definition.name}' no tiene WeaponController.",
+                    this);
+                Destroy(weaponObject);
+                return;
+            }
 
             slots[slotIndex].definition = definition;
             slots[slotIndex].controller = controller;
@@ -458,19 +479,19 @@ namespace HyperManzana.Weapons
         }
 
 #if ENABLE_INPUT_SYSTEM
-        private void ResolveInputActions()
+        private bool ResolveInputActions()
         {
             if (inputActionsAsset == null || string.IsNullOrEmpty(gameplayActionMap))
             {
-                LogWarn("InputActionAsset or action map is missing.");
-                return;
+                Debug.LogError("[WeaponManager] Falta InputActionAsset o gameplayActionMap.", this);
+                return false;
             }
 
             InputActionMap map = inputActionsAsset.FindActionMap(gameplayActionMap, false);
             if (map == null)
             {
-                LogWarn($"Action map '{gameplayActionMap}' was not found in InputActionAsset.");
-                return;
+                Debug.LogError($"[WeaponManager] No existe ActionMap '{gameplayActionMap}' en el InputActionAsset.", this);
+                return false;
             }
 
             fireAction = map.FindAction(fireActionName, false);
@@ -479,11 +500,33 @@ namespace HyperManzana.Weapons
             equipWeapon2Action = map.FindAction(equipWeapon2ActionName, false);
             toggleWeaponAction = map.FindAction(toggleWeaponActionName, false);
 
-            WarnIfActionMissing(fireAction, fireActionName);
-            WarnIfActionMissing(reloadAction, reloadActionName);
-            WarnIfActionMissing(equipWeapon1Action, equipWeapon1ActionName);
-            WarnIfActionMissing(equipWeapon2Action, equipWeapon2ActionName);
-            WarnIfActionMissing(toggleWeaponAction, toggleWeaponActionName);
+            if (fireAction == null)
+            {
+                Debug.LogError($"[WeaponManager] Falta action '{fireActionName}'.", this);
+                return false;
+            }
+            if (reloadAction == null)
+            {
+                Debug.LogError($"[WeaponManager] Falta action '{reloadActionName}'.", this);
+                return false;
+            }
+            if (equipWeapon1Action == null)
+            {
+                Debug.LogError($"[WeaponManager] Falta action '{equipWeapon1ActionName}'.", this);
+                return false;
+            }
+            if (equipWeapon2Action == null)
+            {
+                Debug.LogError($"[WeaponManager] Falta action '{equipWeapon2ActionName}'.", this);
+                return false;
+            }
+            if (toggleWeaponAction == null)
+            {
+                Debug.LogError($"[WeaponManager] Falta action '{toggleWeaponActionName}'.", this);
+                return false;
+            }
+
+            return true;
         }
 
         private void EnableInputActions()
@@ -516,18 +559,65 @@ namespace HyperManzana.Weapons
                 action.Disable();
         }
 
-        private void WarnIfActionMissing(InputAction action, string actionName)
-        {
-            if (action == null)
-                LogWarn($"Action '{actionName}' was not found in map '{gameplayActionMap}'.");
-        }
 #endif
 
-        private void LogWarn(string message)
+        private bool ShouldBlockInputThisFrame()
         {
-            if (!logWarnings)
-                return;
-            Debug.LogWarning($"[{nameof(WeaponManager)}] {message}", this);
+            if (Time.timeScale <= 0f)
+            {
+#if ENABLE_INPUT_SYSTEM
+                if (!inputsSuppressedByPause)
+                {
+                    DisableInputActions();
+                    inputsSuppressedByPause = true;
+                }
+#endif
+                waitForFireReleaseAfterPause = true;
+                return true;
+            }
+
+#if ENABLE_INPUT_SYSTEM
+            if (inputsSuppressedByPause)
+            {
+                EnableInputActions();
+                inputsSuppressedByPause = false;
+                return true; // consume 1 frame post-pausa para evitar inputs en cola.
+            }
+#endif
+
+            if (waitForFireReleaseAfterPause)
+            {
+                if (GetFireHeld())
+                    return true;
+                waitForFireReleaseAfterPause = false;
+            }
+
+            return false;
         }
+
+        private bool ValidateWiring()
+        {
+            bool ok = true;
+            if (weaponRoot == null)
+            {
+                Debug.LogError("[WeaponManager] Falta referencia: weaponRoot.", this);
+                ok = false;
+            }
+
+#if ENABLE_INPUT_SYSTEM
+            if (inputActionsAsset == null)
+            {
+                Debug.LogError("[WeaponManager] Falta referencia: inputActionsAsset.", this);
+                ok = false;
+            }
+            if (string.IsNullOrWhiteSpace(gameplayActionMap))
+            {
+                Debug.LogError("[WeaponManager] Falta valor: gameplayActionMap.", this);
+                ok = false;
+            }
+#endif
+            return ok;
+        }
+
     }
 }

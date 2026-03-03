@@ -14,6 +14,7 @@ public class GameManager : MonoBehaviour
     public int maxRoundRecord;
     public int cuajosActuales;
     public bool newRecord;
+    public bool IsGameOverShown => shown;
 
     private bool shown;
 
@@ -104,4 +105,3 @@ public class GameManager : MonoBehaviour
 #endif
     }
 }
-

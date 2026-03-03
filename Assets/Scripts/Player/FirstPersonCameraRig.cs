@@ -82,6 +82,7 @@ public class FirstPersonCameraRig : MonoBehaviour
     private void LateUpdate()
     {
         if (controller == null || wobblePivot == null) return;
+        if (Time.timeScale <= 0f) return;
 
         HandleJumpLand();
         ApplyHeadBob(Time.deltaTime);

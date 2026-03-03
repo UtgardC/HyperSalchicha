@@ -20,6 +20,7 @@ public class PauseMenuController : MonoBehaviour
 
     [Header("Options")]
     [SerializeField] private PauseOptionsController pauseOptionsController;
+    [SerializeField] private GameManager gameManager;
 
     [Header("Scenes")]
     [SerializeField] private string mainMenuSceneName = "MainMenu";
@@ -33,26 +34,28 @@ public class PauseMenuController : MonoBehaviour
 
     private void Awake()
     {
-        if (pauseMenuRoot != null && pauseMenuPanel == null)
-            pauseMenuPanel = pauseMenuRoot.GetComponent<RectTransform>();
-        if (optionsMenuRoot != null && optionsMenuPanel == null)
-            optionsMenuPanel = optionsMenuRoot.GetComponent<RectTransform>();
-        if (pauseOptionsController == null)
-            pauseOptionsController = GetComponentInChildren<PauseOptionsController>(true);
+        if (!ValidateWiring())
+        {
+            enabled = false;
+            return;
+        }
 
-        if (pauseMenuPanel != null)
-            pauseShownPosition = pauseMenuPanel.anchoredPosition;
-        if (optionsMenuPanel != null)
-            optionsShownPosition = optionsMenuPanel.anchoredPosition;
+        pauseShownPosition = pauseMenuPanel.anchoredPosition;
+        optionsShownPosition = optionsMenuPanel.anchoredPosition;
 
-        if (pauseMenuRoot != null)
-            pauseMenuRoot.SetActive(false);
-        if (optionsMenuRoot != null)
-            optionsMenuRoot.SetActive(false);
+        pauseMenuRoot.SetActive(false);
+        optionsMenuRoot.SetActive(false);
     }
 
     private void Update()
     {
+        if (gameManager.IsGameOverShown)
+        {
+            if (isPaused)
+                ForceClosePauseForGameOver();
+            return;
+        }
+
         if (!Input.GetKeyDown(KeyCode.Escape) || isAnimating)
             return;
 
@@ -87,8 +90,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void OnApplyAndCloseOptionsPressed()
     {
-        if (pauseOptionsController != null)
-            pauseOptionsController.ApplySettings();
+        pauseOptionsController.ApplySettings();
         CloseOptionsMenu();
     }
 
@@ -100,9 +102,6 @@ public class PauseMenuController : MonoBehaviour
 
     private void OpenPauseMenu()
     {
-        if (pauseMenuRoot == null || pauseMenuPanel == null)
-            return;
-
         isPaused = true;
         isAnimating = true;
         Time.timeScale = 0f;
@@ -126,9 +125,6 @@ public class PauseMenuController : MonoBehaviour
 
     private void ResumeGame()
     {
-        if (pauseMenuRoot == null || pauseMenuPanel == null)
-            return;
-
         isAnimating = true;
 
         if (IsOptionsOpen())
@@ -155,9 +151,6 @@ public class PauseMenuController : MonoBehaviour
 
     private void OpenOptionsMenu()
     {
-        if (optionsMenuRoot == null || optionsMenuPanel == null)
-            return;
-
         isAnimating = true;
         float width = GetPanelWidth(optionsMenuPanel);
         optionsMenuRoot.SetActive(true);
@@ -177,7 +170,7 @@ public class PauseMenuController : MonoBehaviour
 
     private void CloseOptionsMenu()
     {
-        if (!IsOptionsOpen() || optionsMenuPanel == null)
+        if (!IsOptionsOpen())
             return;
 
         isAnimating = true;
@@ -191,8 +184,7 @@ public class PauseMenuController : MonoBehaviour
             .SetUpdate(true)
             .OnComplete(() =>
             {
-                if (optionsMenuRoot != null)
-                    optionsMenuRoot.SetActive(false);
+                optionsMenuRoot.SetActive(false);
                 isAnimating = false;
                 optionsTween = null;
             });
@@ -200,9 +192,6 @@ public class PauseMenuController : MonoBehaviour
 
     private void CloseOptionsMenuImmediate()
     {
-        if (optionsMenuPanel == null || optionsMenuRoot == null)
-            return;
-
         float width = GetPanelWidth(optionsMenuPanel);
         optionsMenuPanel.anchoredPosition = optionsShownPosition + Vector2.left * width;
         optionsMenuRoot.SetActive(false);
@@ -211,7 +200,7 @@ public class PauseMenuController : MonoBehaviour
 
     private bool IsOptionsOpen()
     {
-        return optionsMenuRoot != null && optionsMenuRoot.activeSelf;
+        return optionsMenuRoot.activeSelf;
     }
 
     private float GetPanelWidth(RectTransform panel)
@@ -245,5 +234,52 @@ public class PauseMenuController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    private void ForceClosePauseForGameOver()
+    {
+        KillTween(ref pauseTween);
+        KillTween(ref optionsTween);
+        pauseMenuRoot.SetActive(false);
+        optionsMenuRoot.SetActive(false);
+
+        isPaused = false;
+        isAnimating = false;
+    }
+
+    private bool ValidateWiring()
+    {
+        bool ok = true;
+        if (pauseMenuRoot == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: pauseMenuRoot.", this);
+            ok = false;
+        }
+        if (pauseMenuPanel == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: pauseMenuPanel.", this);
+            ok = false;
+        }
+        if (optionsMenuRoot == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: optionsMenuRoot.", this);
+            ok = false;
+        }
+        if (optionsMenuPanel == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: optionsMenuPanel.", this);
+            ok = false;
+        }
+        if (pauseOptionsController == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: pauseOptionsController.", this);
+            ok = false;
+        }
+        if (gameManager == null)
+        {
+            Debug.LogError("[PauseMenuController] Falta referencia: gameManager.", this);
+            ok = false;
+        }
+        return ok;
     }
 }
