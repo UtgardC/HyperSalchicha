@@ -23,7 +23,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private WeaponDefinition startingWeaponSlot1;
         [SerializeField] private WeaponDefinition startingWeaponSlot2;
         [SerializeField] private int startEquippedSlot;
-        [SerializeField] private IndexedWeaponAudioPlayer sharedWeaponAudio;
+        [SerializeField] private WeaponAudioController sharedWeaponAudio;
 
 #if ENABLE_INPUT_SYSTEM
         [Header("Input Asset (required)")]
@@ -44,6 +44,7 @@ namespace HyperManzana.Weapons
         private float externalFireRateMultiplier = 1f;
         private bool inputsSuppressedByPause;
         private bool waitForFireReleaseAfterPause;
+        private PlayerControllerAlt ownerPlayerController;
 
 #if ENABLE_INPUT_SYSTEM
         private InputAction fireAction;
@@ -69,6 +70,9 @@ namespace HyperManzana.Weapons
                 enabled = false;
                 return;
             }
+
+            ownerPlayerController = GetComponent<PlayerControllerAlt>();
+            ConfigureSharedAudioAnchorParent();
 
             for (int i = 0; i < slots.Length; i++)
                 slots[i] = new WeaponSlotRuntime();
@@ -179,7 +183,10 @@ namespace HyperManzana.Weapons
             if (holsteringWeapon == current)
                 return;
 
+            bool wasReloading = current.IsReloading;
             current.CancelReloadBySwap();
+            if (wasReloading)
+                current.StopAllAudio();
             current.SetEquippedDesired(false);
             holsteringWeapon = current;
         }
@@ -252,11 +259,23 @@ namespace HyperManzana.Weapons
             externalFireRateMultiplier = Mathf.Max(0.01f, multiplier);
         }
 
-        public void PlaySharedAudioEvent(int eventIndex)
+        public void PlaySharedAudioEvent(string eventID)
         {
             if (sharedWeaponAudio == null)
                 return;
-            sharedWeaponAudio.PlayByIndex(eventIndex);
+            sharedWeaponAudio.PlayAnimSound(eventID);
+        }
+
+        private void ConfigureSharedAudioAnchorParent()
+        {
+            if (sharedWeaponAudio == null)
+                return;
+
+            Transform anchorParent = ownerPlayerController != null ? ownerPlayerController.cameraTransform : null;
+            if (anchorParent == null)
+                anchorParent = transform;
+
+            sharedWeaponAudio.SetAudioAnchorParent(anchorParent);
         }
 
         private void ToggleWeapon()

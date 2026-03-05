@@ -5329,6 +5329,8 @@ GameObject:
   - component: {fileID: 2800778733644333772}
   - component: {fileID: 707225994335537596}
   - component: {fileID: 6617954459251788792}
+  - component: {fileID: 8108484340533900488}
+  - component: {fileID: 548375227334771911}
   m_Layer: 0
   m_Name: Shotgun
   m_TagString: Untagged
@@ -8443,19 +8445,137 @@ MonoBehaviour:
   isEquippedParam: IsEquipped
   isReloadingParam: IsReloading
   fireTriggerParam: Fire
-  hitscanMask:
-    serializedVersion: 2
-    m_Bits: 64
   hitscanTriggers: 1
-  ignoreOwnerColliders: 1
-  tryTriggerFallbackWhenNoHit: 0
   cameraKickPresetIndex: 0
   cameraKickPositionMultiplier: 1
   cameraKickRotationMultiplier: 1
   cameraKickDurationMultiplier: 1
-  emptyMagazineAudioIndex: -1
   emptyMagazineAudioCooldown: 0.1
   logWarnings: 1
+--- !u!114 &8108484340533900488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3831421875697112312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d7db5c4df9a4a84ae726f17f7630d0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioEvents:
+  - eventID: Equip
+    clip: {fileID: 8300000, guid: 7519ce2ac826a3c48a3146e80d7d8091, type: 3}
+  - eventID: Unequip
+    clip: {fileID: 8300000, guid: 8b2b02b8d29181441b5f1486a45c981e, type: 3}
+  - eventID: Shot
+    clip: {fileID: 8300000, guid: d6aace6b81158ef468e316646038f310, type: 3}
+  - eventID: Reload
+    clip: {fileID: 8300000, guid: 71665b6b67244844fa5471adebd46c5e, type: 3}
+  - eventID: Caulk
+    clip: {fileID: 8300000, guid: d6ffc93f41c06504a9e8d77933d8877e, type: 3}
+  dryFireClip: {fileID: 8300000, guid: 44b22d6dfde0a3f409fda99c6a105d47, type: 3}
+  templateSource: {fileID: 548375227334771911}
+  poolSize: 5
+  pitchRandomness: 0.01
+--- !u!82 &548375227334771911
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3831421875697112312}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 24300002, guid: fa836ed4e21938241969f4a69010fabd, type: 2}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.5
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &3963976958865494577
 GameObject:
   m_ObjectHideFlags: 0

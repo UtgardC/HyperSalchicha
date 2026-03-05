@@ -15,7 +15,7 @@ namespace HyperManzana.Weapons
         [SerializeField] private Transform firePoint;
         [SerializeField] private WeaponVisibleBullets visibleBullets;
         [SerializeField] private WeaponCameraRecoil weaponCameraRecoil;
-        [SerializeField] private IndexedWeaponAudioPlayer weaponAudio;
+        [SerializeField] private WeaponAudioController weaponAudio;
 
         [Header("Animator Parameters")]
         [SerializeField] private string isEquippedParam = "IsEquipped";
@@ -32,7 +32,6 @@ namespace HyperManzana.Weapons
         [SerializeField] private float cameraKickDurationMultiplier = 1f;
 
         [Header("Audio")]
-        [SerializeField] private int emptyMagazineAudioIndex = -1;
         [SerializeField] private float emptyMagazineAudioCooldown = 0.1f;
 
         [Header("Debug")]
@@ -80,6 +79,7 @@ namespace HyperManzana.Weapons
             slotIndex = index;
             CacheMissingReferences();
             ownerPlayerController = ownerManager != null ? ownerManager.GetComponent<PlayerControllerAlt>() : null;
+            ConfigureAudioAnchorParent();
 
             if (weaponDefinition == null)
             {
@@ -104,6 +104,18 @@ namespace HyperManzana.Weapons
             SetAnimatorBool(isEquippedParam, false);
             SyncVisibleBullets();
             RaiseAmmoChanged();
+        }
+
+        private void ConfigureAudioAnchorParent()
+        {
+            if (weaponAudio == null)
+                return;
+
+            Transform anchorParent = ownerPlayerController != null ? ownerPlayerController.cameraTransform : null;
+            if (anchorParent == null && ownerManager != null)
+                anchorParent = ownerManager.transform;
+            if (anchorParent != null)
+                weaponAudio.SetAudioAnchorParent(anchorParent);
         }
 
         public void SetEquippedDesired(bool isEquipped)
@@ -215,18 +227,25 @@ namespace HyperManzana.Weapons
             }
         }
 
-        public void OnAudioEvent(int eventIndex)
+        public void OnAudioEvent(string eventID)
         {
             if (weaponAudio == null)
                 CacheMissingReferences();
             if (weaponAudio == null)
                 return;
-            weaponAudio.PlayByIndex(eventIndex);
+            weaponAudio.PlayAnimSound(eventID);
         }
 
-        public void OnSharedAudioEvent(int eventIndex)
+        public void OnSharedAudioEvent(string eventID)
         {
-            ownerManager?.PlaySharedAudioEvent(eventIndex);
+            ownerManager?.PlaySharedAudioEvent(eventID);
+        }
+
+        public void StopAllAudio()
+        {
+            if (weaponAudio == null)
+                CacheMissingReferences();
+            weaponAudio?.StopAllSounds();
         }
 
         public void OnBulletInserted()
@@ -433,7 +452,7 @@ namespace HyperManzana.Weapons
             if (visibleBullets == null)
                 visibleBullets = GetComponentInChildren<WeaponVisibleBullets>(true);
             if (weaponAudio == null)
-                weaponAudio = GetComponentInChildren<IndexedWeaponAudioPlayer>(true);
+                weaponAudio = GetComponentInChildren<WeaponAudioController>(true);
             if (firePoint == null)
                 firePoint = transform;
             if (weaponCameraRecoil == null)
@@ -520,8 +539,6 @@ namespace HyperManzana.Weapons
 
         private void TryPlayEmptyMagazineAudio()
         {
-            if (emptyMagazineAudioIndex < 0)
-                return;
             if (Time.time < nextEmptyMagazineAudioTime)
                 return;
             if (weaponAudio == null)
@@ -529,7 +546,7 @@ namespace HyperManzana.Weapons
             if (weaponAudio == null)
                 return;
 
-            weaponAudio.PlayByIndex(emptyMagazineAudioIndex);
+            weaponAudio.PlayDryFire();
             nextEmptyMagazineAudioTime = Time.time + Mathf.Max(0.01f, emptyMagazineAudioCooldown);
         }
 
