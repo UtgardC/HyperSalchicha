@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "HyperManzana/Items/Item Data", fileName = "ItemData")]
+[CreateAssetMenu(menuName = "HyperSalchicha/Items/Item Data", fileName = "ItemData")]
 public class ItemData : ScriptableObject
 {
     public string itemName;

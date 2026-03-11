@@ -1,11 +1,11 @@
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace HyperManzana.Enemies
+namespace HyperSalchicha.Enemies
 {
     [RequireComponent(typeof(NavMeshAgent))]
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Enemies/NavMesh Chase (Simple)")]
+    [AddComponentMenu("HyperSalchicha/Enemies/NavMesh Chase (Simple)")]
     public class EnemyNavChase : MonoBehaviour
     {
         [Header("Target")]
@@ -13,19 +13,21 @@ namespace HyperManzana.Enemies
 
         [Header("Agent Settings")]
         public float speed = 3.5f;
+        public float runningSpeedMultiplier = 1.35f;
         public bool useOffMeshLinks = true; // Permite saltos/links si existen en el NavMesh
 
         private NavMeshAgent agent;
         [Header("Animation (opcional)")]
         public Animator animator; // Asignar el Animator del enemigo si quieres el bool Moving
         public string movingBool = "Moving";
-        private EnemyScript enemyScript;
+        private EnemyBase enemyBase;
+        private bool isRunning;
 
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
+            enemyBase = GetComponent<EnemyBase>();
             ApplyAgentSettings();
-            enemyScript = GetComponent<EnemyScript>();
         }
 
         private void Start()
@@ -40,7 +42,7 @@ namespace HyperManzana.Enemies
         private void Update()
         {
             if (agent == null || target == null) return;
-            if (enemyScript != null && enemyScript.IsDead) return;
+            if (enemyBase != null && enemyBase.IsDead) return;
             if (!agent.isOnNavMesh) return;
             agent.destination = target.position;
 
@@ -62,9 +64,18 @@ namespace HyperManzana.Enemies
 
         private void ApplyAgentSettings()
         {
-            agent.speed = speed;
+            if (agent == null)
+                return;
+
+            agent.speed = isRunning ? speed * Mathf.Max(1f, runningSpeedMultiplier) : speed;
             agent.autoTraverseOffMeshLink = useOffMeshLinks;
             agent.autoRepath = true;
+        }
+
+        public void SetRunning(bool running)
+        {
+            isRunning = running;
+            ApplyAgentSettings();
         }
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [AddComponentMenu("")]
     public class SMB_WeaponHolstered : StateMachineBehaviour

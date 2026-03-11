@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace HyperManzana.UI
+namespace HyperSalchicha.UI
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/UI/UI Bar Fill (Right Offset)")]
+    [AddComponentMenu("HyperSalchicha/UI/UI Bar Fill (Right Offset)")]
     public class UIBarFill : MonoBehaviour
     {
         [Tooltip("RectTransform contenedor que define el ancho total de la barra.")]

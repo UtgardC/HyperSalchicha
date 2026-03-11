@@ -1,8 +1,8 @@
 using UnityEngine;
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Interaction/Weapon Dispenser")]
+[AddComponentMenu("HyperSalchicha/Interaction/Weapon Dispenser")]
 public class WeaponDispenser : MonoBehaviour
 {
     [SerializeField] private WeaponDefinition weaponToDispense;

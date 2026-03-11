@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Player/Footstep Manager")]
+[AddComponentMenu("HyperSalchicha/Player/Footstep Manager")]
 public class FootstepManager : MonoBehaviour
 {
     [Serializable]

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/UI/Pause Menu Controller")]
+[AddComponentMenu("HyperSalchicha/UI/Pause Menu Controller")]
 public class PauseMenuController : MonoBehaviour
 {
     [Header("Panels")]

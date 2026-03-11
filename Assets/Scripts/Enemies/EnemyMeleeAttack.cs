@@ -1,10 +1,10 @@
 using UnityEngine;
-using HyperManzana.Player;
+using HyperSalchicha.Player;
 
-namespace HyperManzana.Enemies
+namespace HyperSalchicha.Enemies
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Enemies/Melee Attack (Sphere)")]
+    [AddComponentMenu("HyperSalchicha/Enemies/Melee Attack (Sphere)")]
     public class EnemyMeleeAttack : MonoBehaviour
     {
         [Header("Attack")]
@@ -23,19 +23,19 @@ namespace HyperManzana.Enemies
         [Header("Animation (opcional)")]
         public Animator animator; // Asignar el Animator del enemigo si quieres disparar trigger Attack
         public string attackTrigger = "Attack";
-        private EnemyScript enemyScript;
+        private EnemyBase enemyBase;
 
         private Transform Origin => origin != null ? origin : transform;
 
         private void Awake()
         {
-            enemyScript = GetComponent<EnemyScript>();
+            enemyBase = GetComponent<EnemyBase>();
         }
 
         private void Update()
         {
             if (Time.time < nextTime) return;
-            if (enemyScript != null && enemyScript.IsDead) return;
+            if (enemyBase != null && enemyBase.IsDead) return;
 
             // Detectar si el jugador está en rango; si lo está, iniciar la preparación del ataque
             Vector3 center = Origin.position + Origin.forward * range;
@@ -58,7 +58,7 @@ namespace HyperManzana.Enemies
             float tEnd = Time.time + Mathf.Max(0f, windup);
             while (Time.time < tEnd)
             {
-                if (enemyScript != null && enemyScript.IsDead)
+                if (enemyBase != null && enemyBase.IsDead)
                 {
                     attackRoutine = null;
                     yield break;
@@ -93,6 +93,11 @@ namespace HyperManzana.Enemies
             Vector3 center = o.position + o.forward * range;
             Gizmos.DrawWireSphere(center, radius);
             Gizmos.DrawLine(o.position, center);
+        }
+
+        private void OnDisable()
+        {
+            attackRoutine = null;
         }
     }
 }

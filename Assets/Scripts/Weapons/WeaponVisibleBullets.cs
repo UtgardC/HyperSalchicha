@@ -1,13 +1,13 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     // Coloca este script en el GameObject del arma que tiene las 6 balas visibles.
     // Asigna en el Inspector los 6 transforms de las balas.
     // Oculta/mostrar por escala local (0 -> oculto, escala original -> visible).
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(10000)]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon Visible Bullets (Scale Hide)")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon Visible Bullets (Scale Hide)")]
     public class WeaponVisibleBullets : MonoBehaviour
     {
         [Tooltip("Lista (ordenada) de las balas visibles en el modelo. El índice 0 suele ser la primera en dispararse.")]

@@ -3,7 +3,7 @@ using UnityEngine.Audio;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/UI/Pause Options Controller")]
+[AddComponentMenu("HyperSalchicha/UI/Pause Options Controller")]
 public class PauseOptionsController : MonoBehaviour
 {
     private const string SensitivityPrefKey = "pause_options_camera_sensitivity";

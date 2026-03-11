@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
-    [CreateAssetMenu(fileName = "WeaponDefinition", menuName = "HyperManzana/Weapons/Weapon Definition")]
+    [CreateAssetMenu(fileName = "WeaponDefinition", menuName = "HyperSalchicha/Weapons/Weapon Definition")]
     public class WeaponDefinition : ScriptableObject
     {
         [System.Serializable]

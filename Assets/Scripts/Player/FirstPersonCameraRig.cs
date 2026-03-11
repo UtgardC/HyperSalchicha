@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Player/First Person Camera Rig")]
+[AddComponentMenu("HyperSalchicha/Player/First Person Camera Rig")]
 public class FirstPersonCameraRig : MonoBehaviour
 {
     [System.Serializable]

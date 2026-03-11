@@ -1,8 +1,8 @@
 using UnityEngine;
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/UI/Player Weapons UI Bridge")]
+[AddComponentMenu("HyperSalchicha/UI/Player Weapons UI Bridge")]
 public class PlayerWeaponsUIBridge : MonoBehaviour
 {
     [SerializeField] private WeaponManager weaponManager;

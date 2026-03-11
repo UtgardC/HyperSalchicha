@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon Enhancement Visuals")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon Enhancement Visuals")]
     public class WeaponEnhancementVisuals : MonoBehaviour
     {
         [Header("Material Targets")]

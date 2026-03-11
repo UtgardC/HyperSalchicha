@@ -1,11 +1,11 @@
 using UnityEngine;
 using UnityEngine.Events;
-using HyperManzana.Managers;
+using HyperSalchicha.Managers;
 
-namespace HyperManzana.Player
+namespace HyperSalchicha.Player
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Player/Player Stats")]
+    [AddComponentMenu("HyperSalchicha/Player/Player Stats")]
     public class PlayerStats : MonoBehaviour
     {
         [System.Serializable]

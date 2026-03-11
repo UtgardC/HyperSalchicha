@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Interaction/Machine Repair Animation Event Relay")]
+[AddComponentMenu("HyperSalchicha/Interaction/Machine Repair Animation Event Relay")]
 public class MachineRepairAnimationEventRelay : MonoBehaviour
 {
     [SerializeField] private MachineRepairController target;

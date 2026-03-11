@@ -1,9 +1,9 @@
 using UnityEngine;
-using HyperManzana.Managers;
+using HyperSalchicha.Managers;
 
-namespace HyperManzana.Items
+namespace HyperSalchicha.Items
 {
-    [AddComponentMenu("HyperManzana/Items/Power-Up Pickup")]
+    [AddComponentMenu("HyperSalchicha/Items/Power-Up Pickup")]
     [RequireComponent(typeof(Collider))]
     public class PowerUp : MonoBehaviour
     {

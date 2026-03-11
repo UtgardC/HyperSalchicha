@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon Manager")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon Manager")]
     public class WeaponManager : MonoBehaviour
     {
         private sealed class WeaponSlotRuntime

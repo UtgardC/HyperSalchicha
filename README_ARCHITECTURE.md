@@ -1,4 +1,4 @@
-# HyperManzana - Arquitectura de Codigo (Guia Rapida)
+# HyperSalchicha - Arquitectura de Codigo (Guia Rapida)
 
 Este documento resume como esta organizado el codigo para que otro agente/programador pueda continuar rapido sin releer todo el proyecto.
 

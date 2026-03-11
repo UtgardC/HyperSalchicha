@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     public enum WeaponFireMode
     {

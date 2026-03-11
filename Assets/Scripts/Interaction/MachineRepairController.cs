@@ -13,7 +13,7 @@ public class RepairPart
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Interactable))]
-[AddComponentMenu("HyperManzana/Interaction/Machine Repair Controller")]
+[AddComponentMenu("HyperSalchicha/Interaction/Machine Repair Controller")]
 public class MachineRepairController : MonoBehaviour
 {
     [Header("Repair Parts")]

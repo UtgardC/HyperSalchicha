@@ -1,10 +1,10 @@
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
 using UnityEngine;
 using UnityEngine.Events;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Interactable))]
-[AddComponentMenu("HyperManzana/Interaction/Weapon Enhancement Machine")]
+[AddComponentMenu("HyperSalchicha/Interaction/Weapon Enhancement Machine")]
 public class WeaponEnhancementMachine : MonoBehaviour
 {
     private enum MachineState

@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Projectile Damage Payload")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Projectile Damage Payload")]
     public class ProjectileDamagePayload : MonoBehaviour
     {
         [SerializeField] private float damage;

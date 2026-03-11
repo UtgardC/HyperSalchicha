@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon View")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon View")]
     public class WeaponView : MonoBehaviour
     {
         [SerializeField] private Transform firePoint;

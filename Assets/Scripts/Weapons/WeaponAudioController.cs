@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon Audio Controller")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon Audio Controller")]
     public class WeaponAudioController : MonoBehaviour
     {
         [Serializable]

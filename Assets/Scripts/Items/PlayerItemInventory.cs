@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Items/Player Item Inventory")]
+[AddComponentMenu("HyperSalchicha/Items/Player Item Inventory")]
 public class PlayerItemInventory : MonoBehaviour
 {
     [Header("Runtime")]

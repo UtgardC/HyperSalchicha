@@ -28,12 +28,13 @@ public class GameManager : MonoBehaviour
     {
         int next = currentRound + 1;
         SetRound(next);
-        inGameUIManager.UpdateCurrentRoundDisplay(next);
     }
 
     public void SetRound(int round)
     {
         currentRound = round;
+        if (inGameUIManager != null)
+            inGameUIManager.UpdateCurrentRoundDisplay(currentRound);
         if (currentRound > maxRoundRecord)
         {
             maxRoundRecord = currentRound;

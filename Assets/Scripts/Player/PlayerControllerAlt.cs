@@ -1,5 +1,5 @@
 using UnityEngine;
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif

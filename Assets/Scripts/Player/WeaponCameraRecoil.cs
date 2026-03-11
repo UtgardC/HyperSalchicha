@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Player/Weapon Camera Recoil")]
+[AddComponentMenu("HyperSalchicha/Player/Weapon Camera Recoil")]
 [DefaultExecutionOrder(200)]
 public class WeaponCameraRecoil : MonoBehaviour
 {

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace HyperManzana.Player
+namespace HyperSalchicha.Player
 {
     [System.Obsolete("Legacy relay. Use direct animation events on WeaponController and SMB scripts.")]
     [AddComponentMenu("")]

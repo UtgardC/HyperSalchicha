@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [DisallowMultipleComponent]
-[AddComponentMenu("HyperManzana/Player/Camera Rig Event Relay")]
+[AddComponentMenu("HyperSalchicha/Player/Camera Rig Event Relay")]
 public class CameraRigEventRelay : MonoBehaviour
 {
     [SerializeField] private FirstPersonCameraRig rig;

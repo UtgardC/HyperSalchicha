@@ -1,10 +1,11 @@
 using System;
+using HyperSalchicha.Enemies;
 using UnityEngine;
 
-namespace HyperManzana.Weapons
+namespace HyperSalchicha.Weapons
 {
     [DisallowMultipleComponent]
-    [AddComponentMenu("HyperManzana/Weapons/Weapon Controller")]
+    [AddComponentMenu("HyperSalchicha/Weapons/Weapon Controller")]
     public class WeaponController : MonoBehaviour
     {
         private const float HeatedDamageMultiplier = 1.75f;
@@ -643,7 +644,7 @@ namespace HyperManzana.Weapons
             if (!TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
                 return;
 
-            EnemyScript enemy = hit.collider.GetComponentInParent<EnemyScript>();
+            EnemyBase enemy = hit.collider.GetComponentInParent<EnemyBase>();
             if (enemy != null)
                 enemy.TakeDamage(damage);
         }

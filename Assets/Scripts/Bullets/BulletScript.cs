@@ -1,5 +1,6 @@
 using UnityEngine;
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
+using HyperSalchicha.Enemies;
 
 public class BulletScript : MonoBehaviour
 {
@@ -25,7 +26,7 @@ public class BulletScript : MonoBehaviour
         if (collision.gameObject.CompareTag("Enemy"))
         {
             // Deal damage
-            var enemy = collision.gameObject.GetComponent<EnemyScript>();
+            var enemy = collision.gameObject.GetComponentInParent<EnemyBase>();
             if (enemy != null)
             {
                 enemy.TakeDamage(GetDamage());

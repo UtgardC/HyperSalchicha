@@ -2,7 +2,7 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Interactable))]
-[AddComponentMenu("HyperManzana/Items/Item Pickup")]
+[AddComponentMenu("HyperSalchicha/Items/Item Pickup")]
 public class ItemPickup : MonoBehaviour
 {
     [SerializeField] private ItemData itemData;

@@ -1,10 +1,10 @@
 using System.Collections;
 using UnityEngine;
-using HyperManzana.Weapons;
+using HyperSalchicha.Weapons;
 
-namespace HyperManzana.Managers
+namespace HyperSalchicha.Managers
 {
-    [AddComponentMenu("HyperManzana/Managers/Effects Manager")]
+    [AddComponentMenu("HyperSalchicha/Managers/Effects Manager")]
     public class EffectsManager : MonoBehaviour
     {
         public enum PowerUpEffect

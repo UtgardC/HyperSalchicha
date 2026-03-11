@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace HyperManzana.Player
+namespace HyperSalchicha.Player
 {
-    [System.Obsolete("Legacy weapon system. Use HyperManzana.Weapons.WeaponManager instead.")]
+    [System.Obsolete("Legacy weapon system. Use HyperSalchicha.Weapons.WeaponManager instead.")]
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
     public sealed class PlayerWeapons : MonoBehaviour
