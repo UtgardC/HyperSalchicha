@@ -8567,8 +8567,8 @@ MonoBehaviour:
   fireTriggerParam: Fire
   hitscanTriggers: 1
   cameraKickPresetIndex: 1
-  cameraKickPositionMultiplier: 1
-  cameraKickRotationMultiplier: 1.5
+  cameraKickPositionMultiplier: 2
+  cameraKickRotationMultiplier: 2
   cameraKickDurationMultiplier: 1
   emptyMagazineAudioCooldown: 0.1
   logWarnings: 1

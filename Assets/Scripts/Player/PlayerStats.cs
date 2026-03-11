@@ -105,8 +105,9 @@ namespace HyperSalchicha.Player
 
         public void SetHealth(float value)
         {
+            float previousHealth = health;
             health = Mathf.Clamp(value, 0f, maxHealth);
-            if (value < health)
+            if (health < previousHealth)
                 lastDamageTime = Time.time;
             onHealthChanged.Invoke(health, maxHealth);
             if (healthBar != null) healthBar.Set(health, maxHealth);

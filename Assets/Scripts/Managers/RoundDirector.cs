@@ -54,6 +54,11 @@ public class RoundDirector : MonoBehaviour
     [SerializeField] private float flyerHealthMultiplier = 0.8f;
     [SerializeField] private float bruteHealthMultiplier = 3.5f;
 
+    [Header("Power-Up Drops")]
+    [SerializeField] [Range(0f, 1f)] private float enemyPowerUpDropChance = 0.05f;
+    [SerializeField] private GameObject powerUpPrefabA;
+    [SerializeField] private GameObject powerUpPrefabB;
+
     private int currentRound;
     private int remainingNormals;
     private int remainingFlyers;
@@ -82,6 +87,7 @@ public class RoundDirector : MonoBehaviour
     public float IntermissionRemainingSeconds => intermissionTimer;
     public float FlyerHealthMultiplier => flyerHealthMultiplier;
     public float BruteHealthMultiplier => bruteHealthMultiplier;
+    public float EnemyPowerUpDropChance => Mathf.Clamp01(enemyPowerUpDropChance);
 
     private void Awake()
     {
@@ -186,6 +192,18 @@ public class RoundDirector : MonoBehaviour
         }
     }
 
+    public void TrySpawnEnemyPowerUp(Vector3 position)
+    {
+        if (UnityEngine.Random.value > EnemyPowerUpDropChance)
+            return;
+
+        GameObject prefabToSpawn = SelectRandomPowerUpPrefab();
+        if (prefabToSpawn == null)
+            return;
+
+        Instantiate(prefabToSpawn, position, prefabToSpawn.transform.rotation);
+    }
+
     private void StartRun()
     {
         currentRound = Mathf.Max(1, startingRound);
@@ -265,19 +283,19 @@ public class RoundDirector : MonoBehaviour
         int flyerAliveCap = 0;
         if (safeRound >= flyerIntroRound && safeRound < 10)
             flyerAliveCap = flyerCapRound10;
-        else if (safeRound < 20)
+        else if (safeRound >= 10 && safeRound < 20)
             flyerAliveCap = flyerCapRound20;
-        else if (safeRound < 30)
+        else if (safeRound >= 20 && safeRound < 30)
             flyerAliveCap = flyerCapRound30;
-        else
+        else if (safeRound >= 30)
             flyerAliveCap = flyerCapLate;
 
         int bruteAliveCap = 0;
         if (safeRound >= bruteIntroRound && safeRound < 20)
             bruteAliveCap = bruteCapRound20;
-        else if (safeRound < 40)
+        else if (safeRound >= 20 && safeRound < 40)
             bruteAliveCap = bruteCapRound40;
-        else
+        else if (safeRound >= 40)
             bruteAliveCap = bruteCapLate;
 
         int normalAliveCap = Mathf.Max(1, aliveTotalCap - flyerAliveCap - bruteAliveCap);
@@ -313,5 +331,20 @@ public class RoundDirector : MonoBehaviour
             new Keyframe(10f, 10f),
             new Keyframe(20f, 18f),
             new Keyframe(30f, 28f));
+    }
+
+    private GameObject SelectRandomPowerUpPrefab()
+    {
+        bool hasA = powerUpPrefabA != null;
+        bool hasB = powerUpPrefabB != null;
+
+        if (!hasA && !hasB)
+            return null;
+        if (hasA && !hasB)
+            return powerUpPrefabA;
+        if (!hasA && hasB)
+            return powerUpPrefabB;
+
+        return UnityEngine.Random.value < 0.5f ? powerUpPrefabA : powerUpPrefabB;
     }
 }

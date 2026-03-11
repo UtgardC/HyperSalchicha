@@ -10,15 +10,13 @@ namespace HyperSalchicha.Managers
         public enum PowerUpEffect
         {
             FireRateBoost = 0,
-            InfiniteAmmo = 1
+            AmmoRefill = 1
         }
 
         [Header("Setup")]
         [SerializeField] private WeaponManager weaponManager;
 
         private Coroutine activeFireRateCoroutine;
-        private Coroutine activeInfiniteAmmoCoroutine;
-
         private void Awake()
         {
             if (weaponManager == null)
@@ -38,10 +36,8 @@ namespace HyperSalchicha.Managers
                     activeFireRateCoroutine = StartCoroutine(Co_FireRateBoost(duration, multiplier));
                     break;
 
-                case PowerUpEffect.InfiniteAmmo:
-                    if (activeInfiniteAmmoCoroutine != null)
-                        StopCoroutine(activeInfiniteAmmoCoroutine);
-                    activeInfiniteAmmoCoroutine = StartCoroutine(Co_InfiniteAmmo(duration));
+                case PowerUpEffect.AmmoRefill:
+                    weaponManager.RefillReserveAmmoForAllWeaponsToStartingValue();
                     break;
 
                 default:
@@ -60,17 +56,6 @@ namespace HyperSalchicha.Managers
 
             weaponManager.SetExternalFireRateMultiplier(1f);
             activeFireRateCoroutine = null;
-        }
-
-        private IEnumerator Co_InfiniteAmmo(float duration)
-        {
-            weaponManager.SetGlobalInfiniteMagazinePowerup(true);
-
-            if (duration > 0f)
-                yield return new WaitForSeconds(duration);
-
-            weaponManager.SetGlobalInfiniteMagazinePowerup(false);
-            activeInfiniteAmmoCoroutine = null;
         }
     }
 }

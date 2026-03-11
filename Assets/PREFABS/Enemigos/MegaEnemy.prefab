@@ -253,6 +253,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   maxHealth: 100
+  cuajosRewardOnKill: 200
   healthBar: {fileID: 5159226676132869699}
   animator: {fileID: 8047627088223519841}
   deathBool: Die

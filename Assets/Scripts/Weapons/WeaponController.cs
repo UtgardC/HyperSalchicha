@@ -61,7 +61,7 @@ namespace HyperSalchicha.Weapons
         private int enemyLayerMask;
         private WeaponEnhancementFlags currentEnhancements = WeaponEnhancementFlags.None;
         private WeaponEnhancementVisuals enhancementVisuals;
-        private readonly HashSet<EnemyBase> rewardedEnemiesThisShot = new HashSet<EnemyBase>();
+        private readonly Dictionary<EnemyBase, int> hitscanHitsByEnemyThisShot = new Dictionary<EnemyBase, int>();
 
         public event Action<WeaponController, int, int> AmmoChanged;
 
@@ -290,6 +290,15 @@ namespace HyperSalchicha.Weapons
             enhancementVisuals?.Apply(currentEnhancements);
         }
 
+        public void RefillReserveAmmoToStartingValue()
+        {
+            if (weaponDefinition == null)
+                return;
+
+            reserveAmmo = Mathf.Max(0, weaponDefinition.startingReserveAmmo);
+            RaiseAmmoChanged();
+        }
+
         public void OnBulletInserted()
         {
             if (!IsReloading || weaponDefinition == null)
@@ -385,7 +394,7 @@ namespace HyperSalchicha.Weapons
 
             int pelletCount = GetPelletCount();
             float damagePerPellet = GetDamagePerTriggerPull() / pelletCount;
-            rewardedEnemiesThisShot.Clear();
+            hitscanHitsByEnemyThisShot.Clear();
 
             if (weaponDefinition.fireMode == WeaponFireMode.Projectile)
             {
@@ -406,8 +415,10 @@ namespace HyperSalchicha.Weapons
             for (int i = 0; i < pelletCount; i++)
             {
                 Vector3 shotDirection = BuildShotDirection(rayOrigin, baseRayDirection);
-                FireHitscanPellet(rayOrigin, shotDirection, damagePerPellet, rewardedEnemiesThisShot);
+                FireHitscanPellet(rayOrigin, shotDirection, hitscanHitsByEnemyThisShot);
             }
+
+            ApplyHitscanDamageAndRewards(damagePerPellet, hitscanHitsByEnemyThisShot);
         }
 
         private void TriggerFireAnimation()
@@ -650,18 +661,14 @@ namespace HyperSalchicha.Weapons
         private void FireHitscanPellet(
             Vector3 rayOrigin,
             Vector3 rayDirection,
-            float damage,
-            HashSet<EnemyBase> rewardedEnemies)
+            Dictionary<EnemyBase, int> hitsByEnemy)
         {
             if (!TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
                 return;
 
             EnemyBase enemy = hit.collider.GetComponentInParent<EnemyBase>();
             if (enemy != null)
-            {
-                enemy.TakeDamage(damage);
-                RewardSuccessfulHit(enemy, rewardedEnemies);
-            }
+                RegisterHitscanHit(enemy, hitsByEnemy);
         }
 
         private void FireProjectilePellet(Transform origin, Vector3 shotDirection, float damage)
@@ -762,14 +769,35 @@ namespace HyperSalchicha.Weapons
             return ownerPlayerStats != null ? ownerPlayerStats.CuajosPerSuccessfulHit : 0;
         }
 
-        private void RewardSuccessfulHit(EnemyBase enemy, HashSet<EnemyBase> rewardedEnemies)
+        private void RegisterHitscanHit(EnemyBase enemy, Dictionary<EnemyBase, int> hitsByEnemy)
         {
-            if (enemy == null || ownerPlayerStats == null)
-                return;
-            if (!rewardedEnemies.Add(enemy))
+            if (enemy == null || hitsByEnemy == null)
                 return;
 
-            ownerPlayerStats.RewardSuccessfulEnemyHit();
+            if (hitsByEnemy.TryGetValue(enemy, out int currentHits))
+                hitsByEnemy[enemy] = currentHits + 1;
+            else
+                hitsByEnemy[enemy] = 1;
+        }
+
+        private void ApplyHitscanDamageAndRewards(float damagePerPellet, Dictionary<EnemyBase, int> hitsByEnemy)
+        {
+            if (hitsByEnemy == null || hitsByEnemy.Count == 0)
+                return;
+
+            foreach (KeyValuePair<EnemyBase, int> entry in hitsByEnemy)
+            {
+                EnemyBase enemy = entry.Key;
+                if (enemy == null)
+                    continue;
+
+                int pelletHits = Mathf.Max(0, entry.Value);
+                if (pelletHits <= 0)
+                    continue;
+
+                enemy.TakeDamage(damagePerPellet * pelletHits);
+                ownerPlayerStats?.RewardSuccessfulEnemyHit();
+            }
         }
     }
 }

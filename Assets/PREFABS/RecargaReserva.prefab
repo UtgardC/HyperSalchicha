@@ -564,7 +564,7 @@ GameObject:
   - component: {fileID: 4513377177615221618}
   - component: {fileID: 7396289061345050312}
   m_Layer: 0
-  m_Name: InfiniteAmmo
+  m_Name: RecargaReserva
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

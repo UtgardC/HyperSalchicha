@@ -321,6 +321,24 @@ namespace HyperSalchicha.Weapons
             externalFireRateMultiplier = Mathf.Max(0.01f, multiplier);
         }
 
+        public void RefillReserveAmmoForAllWeaponsToStartingValue()
+        {
+            for (int i = 0; i < slots.Length; i++)
+            {
+                WeaponController controller = slots[i].controller;
+                if (controller == null)
+                    continue;
+
+                controller.RefillReserveAmmoToStartingValue();
+            }
+
+            WeaponController current = CurrentWeapon;
+            if (current == null)
+                OnAmmoChanged?.Invoke(0, 0);
+            else
+                OnAmmoChanged?.Invoke(current.CurrentAmmo, current.ReserveAmmo);
+        }
+
         public void PlaySharedAudioEvent(string eventID)
         {
             if (sharedWeaponAudio == null)

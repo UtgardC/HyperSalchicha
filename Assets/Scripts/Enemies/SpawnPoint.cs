@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace HyperSalchicha.Enemies
 {
@@ -20,6 +21,7 @@ namespace HyperSalchicha.Enemies
         [SerializeField] private float minCeilingHeight;
         [SerializeField] private LayerMask obstructionMask = ~0;
         [SerializeField] private float groundProbeDistance = 3f;
+        [SerializeField] private float navMeshProbeDistance = 2f;
 
         [Header("Zone")]
         [SerializeField] private int zoneId = -1;
@@ -50,6 +52,8 @@ namespace HyperSalchicha.Enemies
             if (!HasRequiredCeiling())
                 return false;
             if ((type == EnemyType.Normal || type == EnemyType.Brute) && !HasGroundBelow())
+                return false;
+            if ((type == EnemyType.Normal || type == EnemyType.Brute) && !HasNavigablePosition())
                 return false;
 
             return true;
@@ -115,6 +119,15 @@ namespace HyperSalchicha.Enemies
                 groundProbeDistance,
                 ~0,
                 QueryTriggerInteraction.Ignore);
+        }
+
+        private bool HasNavigablePosition()
+        {
+            return NavMesh.SamplePosition(
+                transform.position,
+                out _,
+                Mathf.Max(0.1f, navMeshProbeDistance),
+                NavMesh.AllAreas);
         }
 
         private void OnDrawGizmosSelected()

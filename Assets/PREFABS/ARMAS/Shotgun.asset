@@ -19,13 +19,13 @@ MonoBehaviour:
   damagePerShot: 100
   fireRateSeconds: 0.7
   isAutomatic: 0
-  raycastDistance: 20
+  raycastDistance: 30
   projectilePrefab: {fileID: 0}
   projectileSpeed: 40
   spreadShot: 1
-  spreadPelletCount: 200
+  spreadPelletCount: 50
   spreadRadius: 10
-  spreadDistance: 20
+  spreadDistance: 30
   magazineCapacity: 8
   startingMagazineAmmo: 8
   startingReserveAmmo: 24

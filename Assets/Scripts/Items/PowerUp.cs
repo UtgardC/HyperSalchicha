@@ -8,7 +8,7 @@ namespace HyperSalchicha.Items
     public class PowerUp : MonoBehaviour
     {
         [Header("Power-Up Settings")]
-        [Tooltip("The ID of the effect to apply. 0: FireRateBoost, 1: InfiniteAmmo")]
+        [Tooltip("The ID of the effect to apply. 0: FireRateBoost, 1: AmmoRefill")]
         [SerializeField] private int effectID = 0;
         
         [Tooltip("How long the effect lasts in seconds.")]

@@ -13,13 +13,6 @@ public class SpawnDirector : MonoBehaviour
         public int[] adjacentZoneIds = Array.Empty<int>();
     }
 
-    private struct TrackedEnemyState
-    {
-        public Vector3 lastPosition;
-        public float farTimer;
-        public float stuckTimer;
-    }
-
     [Header("References")]
     [SerializeField] private RoundDirector roundDirector;
     [SerializeField] private EnemyPool enemyPool;
@@ -32,27 +25,20 @@ public class SpawnDirector : MonoBehaviour
     [Header("Spawn Timing")]
     [SerializeField] private float failedSpawnRetryDelay = 0.25f;
     [SerializeField] private float minBruteSpawnSpacing = 10f;
+    [SerializeField] private float navMeshPlacementProbeDistance = 2f;
 
     [Header("Prewarm")]
     [SerializeField] private int prewarmReferenceRound = 30;
     [SerializeField] private int prewarmPoolMargin = 2;
 
     [Header("Recycling")]
-    [SerializeField] private float normalRecycleDistance = 35f;
-    [SerializeField] private float normalRecycleTime = 4f;
-    [SerializeField] private float flyerRecycleDistance = 42f;
-    [SerializeField] private float flyerRecycleTime = 3f;
-    [SerializeField] private float bruteRecycleDistance = 55f;
-    [SerializeField] private float bruteRecycleTime = 6f;
-    [SerializeField] private float stuckMovementThreshold = 0.15f;
-    [SerializeField] private float stuckCheckDelay = 3f;
+    [SerializeField] private bool recycleEnemiesWithInvalidPath = true;
 
     [Header("Zones")]
     [SerializeField] private int currentPlayerZoneId = -1;
     [SerializeField] private ZoneAdjacency[] zoneAdjacency = Array.Empty<ZoneAdjacency>();
 
     private readonly List<EnemyBase> activeEnemies = new();
-    private readonly Dictionary<EnemyBase, TrackedEnemyState> trackedEnemies = new();
     private float spawnTimer;
     private float timeSinceLastBruteSpawn = float.MaxValue;
     private bool roundSpawningActive;
@@ -175,7 +161,7 @@ public class SpawnDirector : MonoBehaviour
         if (enemy == null)
             return false;
 
-        PlaceEnemyAtSpawn(enemy, point);
+        PlaceEnemyAtSpawn(enemy, point, type);
         EnemySpawnData data = BuildSpawnData(type, enemy.BaseMaxHealth, false, 0f);
         enemy.Initialize(data, enemyPool, point);
         TrackEnemy(enemy);
@@ -301,13 +287,6 @@ public class SpawnDirector : MonoBehaviour
 
         if (!activeEnemies.Contains(enemy))
             activeEnemies.Add(enemy);
-
-        trackedEnemies[enemy] = new TrackedEnemyState
-        {
-            lastPosition = enemy.transform.position,
-            farTimer = 0f,
-            stuckTimer = 0f,
-        };
     }
 
     private void HandleEnemyKilled(EnemyBase enemy)
@@ -316,13 +295,13 @@ public class SpawnDirector : MonoBehaviour
             return;
 
         roundDirector?.NotifyEnemyKilled(enemy.Type);
+        roundDirector?.TrySpawnEnemyPowerUp(enemy.transform.position);
         activeEnemies.Remove(enemy);
-        trackedEnemies.Remove(enemy);
     }
 
     private void UpdateRecycling()
     {
-        if (playerTarget == null || activeEnemies.Count == 0)
+        if (!recycleEnemiesWithInvalidPath || activeEnemies.Count == 0)
             return;
 
         for (int i = activeEnemies.Count - 1; i >= 0; i--)
@@ -331,37 +310,10 @@ public class SpawnDirector : MonoBehaviour
             if (enemy == null || enemy.IsDead || !enemy.gameObject.activeInHierarchy)
             {
                 activeEnemies.RemoveAt(i);
-                trackedEnemies.Remove(enemy);
                 continue;
             }
 
-            if (!trackedEnemies.TryGetValue(enemy, out TrackedEnemyState state))
-                state = new TrackedEnemyState { lastPosition = enemy.transform.position };
-
-            float distance = Vector3.Distance(enemy.transform.position, playerTarget.position);
-            float farDistance = GetRecycleDistance(enemy.Type);
-            float farTime = GetRecycleTime(enemy.Type);
-
-            if (distance > farDistance)
-                state.farTimer += Time.deltaTime;
-            else
-                state.farTimer = 0f;
-
-            float moved = Vector3.Distance(enemy.transform.position, state.lastPosition);
-            if (moved <= stuckMovementThreshold)
-                state.stuckTimer += Time.deltaTime;
-            else
-                state.stuckTimer = 0f;
-
-            state.lastPosition = enemy.transform.position;
-            trackedEnemies[enemy] = state;
-
-            bool shouldRecycle =
-                state.farTimer >= farTime ||
-                state.stuckTimer >= stuckCheckDelay ||
-                HasInvalidPath(enemy);
-
-            if (shouldRecycle)
+            if (HasInvalidPath(enemy))
                 TryRecycleEnemy(enemy);
         }
     }
@@ -374,29 +326,48 @@ public class SpawnDirector : MonoBehaviour
 
         EnemyRecycleState recycleState = enemy.CaptureRecycleState();
         recycleState.isRecycled = true;
-        PlaceEnemyAtSpawn(enemy, point);
+        PlaceEnemyAtSpawn(enemy, point, enemy.Type);
         enemy.Initialize(recycleState.ToSpawnData(), enemyPool, point);
-        trackedEnemies[enemy] = new TrackedEnemyState
-        {
-            lastPosition = enemy.transform.position,
-            farTimer = 0f,
-            stuckTimer = 0f,
-        };
         return true;
     }
 
-    private void PlaceEnemyAtSpawn(EnemyBase enemy, SpawnPoint point)
+    private void PlaceEnemyAtSpawn(EnemyBase enemy, SpawnPoint point, EnemyType type)
     {
         if (enemy == null || point == null)
             return;
 
-        if (enemy.TryGetNavMeshAgent(out NavMeshAgent agent) && agent != null && agent.enabled && agent.isOnNavMesh)
+        Vector3 targetPosition = point.transform.position;
+        Quaternion targetRotation = point.transform.rotation;
+        bool requiresNavMesh = type == EnemyType.Normal || type == EnemyType.Brute;
+
+        if (requiresNavMesh &&
+            NavMesh.SamplePosition(
+                targetPosition,
+                out NavMeshHit navHit,
+                Mathf.Max(0.1f, navMeshPlacementProbeDistance),
+                NavMesh.AllAreas))
         {
-            agent.Warp(point.transform.position);
+            targetPosition = navHit.position;
+        }
+
+        if (enemy.TryGetNavMeshAgent(out NavMeshAgent agent) && agent != null && requiresNavMesh)
+        {
+            bool wasEnabled = agent.enabled;
+            if (wasEnabled)
+                agent.enabled = false;
+
+            enemy.transform.SetPositionAndRotation(targetPosition, targetRotation);
+
+            if (wasEnabled)
+            {
+                agent.enabled = true;
+                if (agent.isOnNavMesh)
+                    agent.Warp(targetPosition);
+            }
         }
         else
         {
-            enemy.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
+            enemy.transform.SetPositionAndRotation(targetPosition, targetRotation);
         }
     }
 
@@ -407,8 +378,8 @@ public class SpawnDirector : MonoBehaviour
 
         if (!enemy.TryGetNavMeshAgent(out NavMeshAgent agent) || agent == null || !agent.enabled)
             return false;
-        if (!agent.isOnNavMesh)
-            return true;
+        if (!agent.isOnNavMesh || agent.pathPending || !agent.hasPath)
+            return false;
 
         return agent.pathStatus == NavMeshPathStatus.PathInvalid;
     }
@@ -421,26 +392,6 @@ public class SpawnDirector : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             playerTarget = player.transform;
-    }
-
-    private float GetRecycleDistance(EnemyType type)
-    {
-        return type switch
-        {
-            EnemyType.Flyer => flyerRecycleDistance,
-            EnemyType.Brute => bruteRecycleDistance,
-            _ => normalRecycleDistance,
-        };
-    }
-
-    private float GetRecycleTime(EnemyType type)
-    {
-        return type switch
-        {
-            EnemyType.Flyer => flyerRecycleTime,
-            EnemyType.Brute => bruteRecycleTime,
-            _ => normalRecycleTime,
-        };
     }
 
     private List<SpawnPoint> GetZoneFiltered(List<SpawnPoint> candidates, int zoneId)

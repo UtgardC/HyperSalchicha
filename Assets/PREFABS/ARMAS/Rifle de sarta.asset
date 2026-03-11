@@ -17,7 +17,7 @@ MonoBehaviour:
   visualModel: {fileID: 2842171605682045466, guid: 5121b20a6530d4042a4bd7eb95a99cfd, type: 3}
   fireMode: 0
   damagePerShot: 20
-  fireRateSeconds: 0.15
+  fireRateSeconds: 0.2
   isAutomatic: 1
   raycastDistance: 150
   projectilePrefab: {fileID: 0}

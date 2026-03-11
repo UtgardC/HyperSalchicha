@@ -4,15 +4,15 @@ using DG.Tweening;
 using UnityEngine.UI;
 using TMPro;
 
-public class DeathScreenUIManager : MonoBehaviour
+public class VictoryScreenUIManager : MonoBehaviour
 {
     [Header("Textos (TextMeshProUGUI)")]
     [SerializeField] private TextMeshProUGUI currentRoundText;
     [SerializeField] private TextMeshProUGUI maxRoundRecordText;
     [SerializeField] private TextMeshProUGUI cuajosText;
 
-    [Header("Bounce 'Nuevo récord'")]
-    [SerializeField] private GameObject bounceTarget; // cartel "NEW RECORD!"
+    [Header("Bounce 'Nuevo record'")]
+    [SerializeField] private GameObject bounceTarget;
     [SerializeField] private float bounceScaleMultiplier = 1.2f;
     [SerializeField] private float bounceDuration = 0.5f;
     [SerializeField] private Ease bounceEase = Ease.InOutSine;
@@ -30,13 +30,15 @@ public class DeathScreenUIManager : MonoBehaviour
     [SerializeField] private Ease fadeEase = Ease.Linear;
 
     private GameManager Game => GameManager.Instance;
-    private Vector3 _bounceOriginalScale;
-    private Vector2 _moveOriginalAnchoredPos;
+    private Vector3 bounceOriginalScale;
+    private Vector2 moveOriginalAnchoredPos;
 
     private void Awake()
     {
-        _bounceOriginalScale = bounceTarget.transform.localScale;
-        _moveOriginalAnchoredPos = moveTarget.anchoredPosition;
+        if (bounceTarget != null)
+            bounceOriginalScale = bounceTarget.transform.localScale;
+        if (moveTarget != null)
+            moveOriginalAnchoredPos = moveTarget.anchoredPosition;
     }
 
     private void OnEnable()
@@ -61,23 +63,33 @@ public class DeathScreenUIManager : MonoBehaviour
 
     private void UpdateTexts()
     {
-        currentRoundText.text   = Game.currentRound.ToString();
-        maxRoundRecordText.text = Game.maxRoundRecord.ToString();
-        cuajosText.text         = Game.cuajosActuales.ToString();
+        if (Game == null)
+            return;
+
+        if (currentRoundText != null)
+            currentRoundText.text = Game.currentRound.ToString();
+        if (maxRoundRecordText != null)
+            maxRoundRecordText.text = Game.maxRoundRecord.ToString();
+        if (cuajosText != null)
+            cuajosText.text = Game.cuajosActuales.ToString();
     }
 
     private void HandleNewRecordBounce()
     {
+        if (bounceTarget == null || Game == null)
+            return;
+
+        bounceTarget.transform.DOKill();
+
         if (Game.newRecord)
         {
             bounceTarget.SetActive(true);
-            bounceTarget.transform.localScale = _bounceOriginalScale;
-
+            bounceTarget.transform.localScale = bounceOriginalScale;
             bounceTarget.transform
-                .DOScale(_bounceOriginalScale * bounceScaleMultiplier, bounceDuration)
+                .DOScale(bounceOriginalScale * bounceScaleMultiplier, bounceDuration)
                 .SetEase(bounceEase)
                 .SetLoops(-1, LoopType.Yoyo)
-                .SetUpdate(UpdateType.Normal, true); // ignora Time.timeScale (por el pause)
+                .SetUpdate(UpdateType.Normal, true);
         }
         else
         {
@@ -87,26 +99,33 @@ public class DeathScreenUIManager : MonoBehaviour
 
     private IEnumerator MoveUpCoroutine()
     {
-        moveTarget.anchoredPosition = _moveOriginalAnchoredPos;
+        if (moveTarget == null)
+            yield break;
+
+        moveTarget.DOKill();
+        moveTarget.anchoredPosition = moveOriginalAnchoredPos;
 
         if (moveDelay > 0f)
             yield return new WaitForSecondsRealtime(moveDelay);
 
         moveTarget
-            .DOAnchorPos(_moveOriginalAnchoredPos + new Vector2(0f, moveOffsetY), moveDuration)
+            .DOAnchorPos(moveOriginalAnchoredPos + new Vector2(0f, moveOffsetY), moveDuration)
             .SetEase(moveEase)
             .SetUpdate(UpdateType.Normal, true);
     }
 
     private void PlayFadeIn()
     {
-        Color c = fadeImage.color;
-        fadeImage.color = new Color(c.r, c.g, c.b, 0f);
+        if (fadeImage == null)
+            return;
 
+        fadeImage.DOKill();
+
+        Color color = fadeImage.color;
+        fadeImage.color = new Color(color.r, color.g, color.b, 0f);
         fadeImage
             .DOFade(1f, fadeDuration)
             .SetEase(fadeEase)
             .SetUpdate(UpdateType.Normal, true);
     }
-
 }
