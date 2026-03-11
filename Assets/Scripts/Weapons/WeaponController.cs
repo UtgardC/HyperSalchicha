@@ -7,6 +7,10 @@ namespace HyperManzana.Weapons
     [AddComponentMenu("HyperManzana/Weapons/Weapon Controller")]
     public class WeaponController : MonoBehaviour
     {
+        private const float HeatedDamageMultiplier = 1.75f;
+        private const float OverclockFireRateMultiplier = 1.5f;
+        private const int SpreadGizmoSegments = 24;
+
         [Header("Definition")]
         [SerializeField] private WeaponDefinition weaponDefinition;
 
@@ -51,6 +55,8 @@ namespace HyperManzana.Weapons
         private readonly RaycastHit[] hitscanBuffer = new RaycastHit[32];
         private PlayerControllerAlt ownerPlayerController;
         private int enemyLayerMask;
+        private WeaponEnhancementFlags currentEnhancements = WeaponEnhancementFlags.None;
+        private WeaponEnhancementVisuals enhancementVisuals;
 
         public event Action<WeaponController, int, int> AmmoChanged;
 
@@ -60,6 +66,8 @@ namespace HyperManzana.Weapons
         public int ReserveAmmo => reserveAmmo;
         public bool IsReloading => animator != null ? animator.GetBool(isReloadingParam) : isReloadingLocal;
         public bool IsEquippedDesired => animator != null ? animator.GetBool(isEquippedParam) : isEquippedLocal;
+        public WeaponEnhancementFlags ActiveEnhancements => currentEnhancements;
+        public bool HasInfiniteAmmoSupply => HasInfiniteMagazine() || HasInfiniteReserve();
 
         private void Awake()
         {
@@ -80,6 +88,11 @@ namespace HyperManzana.Weapons
             CacheMissingReferences();
             ownerPlayerController = ownerManager != null ? ownerManager.GetComponent<PlayerControllerAlt>() : null;
             ConfigureAudioAnchorParent();
+            if (enhancementVisuals != null)
+            {
+                enhancementVisuals.ApplyDefinitionOverrides(weaponDefinition);
+                enhancementVisuals.Apply(currentEnhancements);
+            }
 
             if (weaponDefinition == null)
             {
@@ -248,6 +261,29 @@ namespace HyperManzana.Weapons
             weaponAudio?.StopAllSounds();
         }
 
+        public bool HasEnhancement(WeaponEnhancementFlags flag)
+        {
+            return (currentEnhancements & flag) != 0;
+        }
+
+        public void AddEnhancement(WeaponEnhancementFlags flag)
+        {
+            currentEnhancements |= flag;
+            enhancementVisuals?.Apply(currentEnhancements);
+        }
+
+        public void RemoveEnhancement(WeaponEnhancementFlags flag)
+        {
+            currentEnhancements &= ~flag;
+            enhancementVisuals?.Apply(currentEnhancements);
+        }
+
+        public void SetEnhancements(WeaponEnhancementFlags flags)
+        {
+            currentEnhancements = flags;
+            enhancementVisuals?.Apply(currentEnhancements);
+        }
+
         public void OnBulletInserted()
         {
             if (!IsReloading || weaponDefinition == null)
@@ -311,6 +347,8 @@ namespace HyperManzana.Weapons
                 return false;
 
             float fireRate = Mathf.Max(0f, weaponDefinition.fireRateSeconds);
+            if (HasEnhancement(WeaponEnhancementFlags.Overclocked))
+                fireRate /= OverclockFireRateMultiplier;
             if (ownerManager != null)
                 fireRate /= Mathf.Max(0.01f, ownerManager.ExternalFireRateMultiplier);
 
@@ -337,7 +375,10 @@ namespace HyperManzana.Weapons
                 return;
 
             Transform origin = firePoint != null ? firePoint : transform;
-            float damage = weaponDefinition.damagePerShot;
+            GetHitscanRay(out Vector3 rayOrigin, out Vector3 baseRayDirection);
+
+            int pelletCount = GetPelletCount();
+            float damagePerPellet = GetDamagePerTriggerPull() / pelletCount;
 
             if (weaponDefinition.fireMode == WeaponFireMode.Projectile)
             {
@@ -347,32 +388,18 @@ namespace HyperManzana.Weapons
                     return;
                 }
 
-                GameObject projectile = Instantiate(
-                    weaponDefinition.projectilePrefab,
-                    origin.position,
-                    origin.rotation);
-
-                var payload = projectile.GetComponent<ProjectileDamagePayload>();
-                if (payload == null)
-                    payload = projectile.AddComponent<ProjectileDamagePayload>();
-                payload.SetDamage(damage);
-
-                var bullet = projectile.GetComponent<BulletScript>();
-                if (bullet != null)
-                    bullet.damage = damage;
-
-                var rb = projectile.GetComponent<Rigidbody>();
-                if (rb != null)
-                    rb.linearVelocity = origin.forward * weaponDefinition.projectileSpeed;
+                for (int i = 0; i < pelletCount; i++)
+                {
+                    Vector3 shotDirection = BuildShotDirection(rayOrigin, baseRayDirection);
+                    FireProjectilePellet(origin, shotDirection, damagePerPellet);
+                }
                 return;
             }
 
-            GetHitscanRay(out Vector3 rayOrigin, out Vector3 rayDirection);
-            if (TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
+            for (int i = 0; i < pelletCount; i++)
             {
-                EnemyScript enemy = hit.collider.GetComponentInParent<EnemyScript>();
-                if (enemy != null)
-                    enemy.TakeDamage(damage);
+                Vector3 shotDirection = BuildShotDirection(rayOrigin, baseRayDirection);
+                FireHitscanPellet(rayOrigin, shotDirection, damagePerPellet);
             }
         }
 
@@ -416,7 +443,10 @@ namespace HyperManzana.Weapons
 
         private bool HasInfiniteReserve()
         {
-            return weaponDefinition != null && weaponDefinition.infiniteReserve;
+            return weaponDefinition != null &&
+                (weaponDefinition.infiniteReserve ||
+                HasEnhancement(WeaponEnhancementFlags.Quantum) ||
+                (ownerManager != null && ownerManager.GlobalInfiniteMagazinePowerupActive));
         }
 
         private void SetAnimatorBool(string param, bool value)
@@ -453,6 +483,8 @@ namespace HyperManzana.Weapons
                 visibleBullets = GetComponentInChildren<WeaponVisibleBullets>(true);
             if (weaponAudio == null)
                 weaponAudio = GetComponentInChildren<WeaponAudioController>(true);
+            if (enhancementVisuals == null)
+                enhancementVisuals = GetComponentInChildren<WeaponEnhancementVisuals>(true);
             if (firePoint == null)
                 firePoint = transform;
             if (weaponCameraRecoil == null)
@@ -548,6 +580,157 @@ namespace HyperManzana.Weapons
 
             weaponAudio.PlayDryFire();
             nextEmptyMagazineAudioTime = Time.time + Mathf.Max(0.01f, emptyMagazineAudioCooldown);
+        }
+
+        private int GetPelletCount()
+        {
+            if (weaponDefinition == null || !weaponDefinition.spreadShot)
+                return 1;
+
+            return Mathf.Max(1, weaponDefinition.spreadPelletCount);
+        }
+
+        private float GetDamagePerTriggerPull()
+        {
+            if (weaponDefinition == null)
+                return 0f;
+
+            float damage = weaponDefinition.damagePerShot;
+            if (HasEnhancement(WeaponEnhancementFlags.Heated))
+                damage *= HeatedDamageMultiplier;
+
+            return damage;
+        }
+
+        private Vector3 BuildShotDirection(Vector3 rayOrigin, Vector3 baseDirection)
+        {
+            if (weaponDefinition == null || !weaponDefinition.spreadShot)
+                return baseDirection;
+
+            float spreadRadius = Mathf.Max(0f, weaponDefinition.spreadRadius);
+            if (spreadRadius <= 0f)
+                return baseDirection;
+
+            float spreadDistance = Mathf.Max(0.01f, weaponDefinition.spreadDistance);
+            Vector2 offset = UnityEngine.Random.insideUnitCircle * spreadRadius;
+            GetSpreadBasis(baseDirection, out Vector3 right, out Vector3 up);
+
+            Vector3 targetPoint =
+                rayOrigin +
+                baseDirection * spreadDistance +
+                right * offset.x +
+                up * offset.y;
+
+            return (targetPoint - rayOrigin).normalized;
+        }
+
+        private void GetSpreadBasis(Vector3 forward, out Vector3 right, out Vector3 up)
+        {
+            if (ownerPlayerController != null && ownerPlayerController.cameraTransform != null)
+            {
+                right = ownerPlayerController.cameraTransform.right;
+                up = ownerPlayerController.cameraTransform.up;
+                return;
+            }
+
+            Quaternion rotation = Quaternion.LookRotation(forward);
+            right = rotation * Vector3.right;
+            up = rotation * Vector3.up;
+        }
+
+        private void FireHitscanPellet(Vector3 rayOrigin, Vector3 rayDirection, float damage)
+        {
+            if (!TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
+                return;
+
+            EnemyScript enemy = hit.collider.GetComponentInParent<EnemyScript>();
+            if (enemy != null)
+                enemy.TakeDamage(damage);
+        }
+
+        private void FireProjectilePellet(Transform origin, Vector3 shotDirection, float damage)
+        {
+            GameObject projectile = Instantiate(
+                weaponDefinition.projectilePrefab,
+                origin.position,
+                Quaternion.LookRotation(shotDirection));
+
+            var payload = projectile.GetComponent<ProjectileDamagePayload>();
+            if (payload == null)
+                payload = projectile.AddComponent<ProjectileDamagePayload>();
+            payload.SetDamage(damage);
+
+            var bullet = projectile.GetComponent<BulletScript>();
+            if (bullet != null)
+                bullet.damage = damage;
+
+            var rb = projectile.GetComponent<Rigidbody>();
+            if (rb != null)
+                rb.linearVelocity = shotDirection * weaponDefinition.projectileSpeed;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (weaponDefinition == null)
+                return;
+
+            GetGizmoRay(out Vector3 rayOrigin, out Vector3 rayDirection);
+            float maxDistance = Mathf.Max(0f, weaponDefinition.raycastDistance);
+            if (maxDistance <= 0f)
+                return;
+
+            Gizmos.color = new Color(1f, 0.82f, 0.25f, 0.9f);
+            Gizmos.DrawRay(rayOrigin, rayDirection * maxDistance);
+
+            if (!weaponDefinition.spreadShot)
+                return;
+
+            float spreadDistance = Mathf.Min(Mathf.Max(0.01f, weaponDefinition.spreadDistance), maxDistance);
+            float spreadRadius = Mathf.Max(0f, weaponDefinition.spreadRadius);
+            if (spreadRadius <= 0f)
+                return;
+
+            GetSpreadBasis(rayDirection, out Vector3 right, out Vector3 up);
+            Vector3 center = rayOrigin + rayDirection * spreadDistance;
+
+            DrawWireCircle(center, right, up, spreadRadius);
+            Gizmos.DrawLine(rayOrigin, center + right * spreadRadius);
+            Gizmos.DrawLine(rayOrigin, center - right * spreadRadius);
+            Gizmos.DrawLine(rayOrigin, center + up * spreadRadius);
+            Gizmos.DrawLine(rayOrigin, center - up * spreadRadius);
+        }
+
+        private void GetGizmoRay(out Vector3 rayOrigin, out Vector3 rayDirection)
+        {
+            PlayerControllerAlt player = ownerPlayerController;
+            if (player == null)
+                player = GetComponentInParent<PlayerControllerAlt>();
+
+            if (player != null && player.cameraTransform != null)
+            {
+                rayOrigin = player.cameraTransform.position;
+                rayDirection = player.cameraTransform.forward;
+                return;
+            }
+
+            Transform origin = firePoint != null ? firePoint : transform;
+            rayOrigin = origin.position;
+            rayDirection = origin.forward;
+        }
+
+        private static void DrawWireCircle(Vector3 center, Vector3 right, Vector3 up, float radius)
+        {
+            Vector3 previousPoint = center + right * radius;
+            for (int i = 1; i <= SpreadGizmoSegments; i++)
+            {
+                float angle = (i / (float)SpreadGizmoSegments) * Mathf.PI * 2f;
+                Vector3 nextPoint =
+                    center +
+                    (right * Mathf.Cos(angle) + up * Mathf.Sin(angle)) * radius;
+
+                Gizmos.DrawLine(previousPoint, nextPoint);
+                previousPoint = nextPoint;
+            }
         }
 
         private void LogWarn(string message)

@@ -34,18 +34,20 @@ public class PlayerWeaponsUIBridge : MonoBehaviour
     {
         if (weapon == null)
         {
-            inGameUIManager.UpdateAmmoDisplay(0, 0);
+            inGameUIManager.UpdateAmmoDisplay(0, 0, false);
             inGameUIManager.UpdateWeaponNameDisplay(string.Empty);
             return;
         }
 
         string displayName = weapon.Definition != null ? weapon.Definition.displayName : "Weapon";
-        inGameUIManager.UpdateAmmoDisplay(weapon.CurrentAmmo, weapon.ReserveAmmo);
+        inGameUIManager.UpdateAmmoDisplay(weapon.CurrentAmmo, weapon.ReserveAmmo, weapon.HasInfiniteAmmoSupply);
         inGameUIManager.UpdateWeaponNameDisplay(displayName);
     }
 
     private void HandleAmmoChanged(int magazine, int reserve)
     {
-        inGameUIManager.UpdateAmmoDisplay(magazine, reserve);
+        WeaponController currentWeapon = weaponManager != null ? weaponManager.CurrentWeapon : null;
+        bool reserveIsInfinite = currentWeapon != null && currentWeapon.HasInfiniteAmmoSupply;
+        inGameUIManager.UpdateAmmoDisplay(magazine, reserve, reserveIsInfinite);
     }
 }

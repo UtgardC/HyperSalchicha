@@ -38,7 +38,6 @@ public class PlayerControllerAlt : MonoBehaviour
     [Header("Ground Check")]
     [Tooltip("Punto desde el cual se hace el chequeo esférico")] public Transform groundCheckPoint;
     [Tooltip("Radio de la esfera para detectar suelo")] public float groundCheckRadius = 0.3f;
-    [Tooltip("Máscara de capa considerada como suelo")] public LayerMask groundMask = ~0;
     [Tooltip("Longitud del raycast de depuración hacia abajo")] public float groundRayLength = 0.2f;
     public bool isGrounded;
 
@@ -59,11 +58,18 @@ public class PlayerControllerAlt : MonoBehaviour
     [SerializeField] private string sprintActionName = "Sprint";
     [Header("Dependencias")]
     [SerializeField] private WeaponManager weaponManager;
+    [SerializeField] private Collider playerCollider;
+
+    [Header("Friccion Dinamica")]
+    [SerializeField] private PhysicsMaterial movingPhysicMaterial;
+    [SerializeField] private PhysicsMaterial restBrakingPhysicMaterial;
+    [SerializeField, Range(0f, 0.25f)] private float restInputThreshold = 0.05f;
 
     private Rigidbody rb;
 
     private bool isSprinting;
     private bool sprintBlockedUntilRelease;
+    private bool usingRestFriction;
 
     private Vector2 moveInput;
     private Vector2 lookInput;
@@ -73,6 +79,7 @@ public class PlayerControllerAlt : MonoBehaviour
     private bool airVelocityCaptured;
     private Vector3 airVelocityAtJump;
     private float airSpeedAtJump;
+    private int groundLayerMask;
 
 #if ENABLE_INPUT_SYSTEM
     private InputAction moveAction;
@@ -84,6 +91,11 @@ public class PlayerControllerAlt : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        if (!TryCacheGroundLayerMask())
+        {
+            enabled = false;
+            return;
+        }
         if (!ValidateWiring())
         {
             enabled = false;
@@ -113,6 +125,8 @@ public class PlayerControllerAlt : MonoBehaviour
         {
             groundCheckPoint = transform;
         }
+
+        ApplyDynamicFrictionState(forceRefresh: true);
     }
 
     void OnEnable()
@@ -153,6 +167,7 @@ public class PlayerControllerAlt : MonoBehaviour
     void FixedUpdate()
     {
         CheckGround();
+        ApplyDynamicFrictionState(forceRefresh: false);
         HandleMovement();
         HandleJump();
         ApplyGravity();
@@ -382,7 +397,32 @@ public class PlayerControllerAlt : MonoBehaviour
     {
         Vector3 origin = groundCheckPoint != null ? groundCheckPoint.position : transform.position;
         // Chequeo esférico contra capas de suelo
-        isGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
+        isGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundLayerMask, QueryTriggerInteraction.Ignore);
+    }
+
+    bool TryCacheGroundLayerMask()
+    {
+        int groundLayer = LayerMask.NameToLayer("Ground");
+        if (groundLayer < 0)
+        {
+            Debug.LogError("[PlayerControllerAlt] No existe la layer 'Ground'.", this);
+            return false;
+        }
+
+        groundLayerMask = 1 << groundLayer;
+        return true;
+    }
+
+    void ApplyDynamicFrictionState(bool forceRefresh)
+    {
+        bool isTryingToMove = moveInput.sqrMagnitude > (restInputThreshold * restInputThreshold);
+        bool shouldUseRestFriction = isGrounded && !isTryingToMove;
+
+        if (!forceRefresh && shouldUseRestFriction == usingRestFriction)
+            return;
+
+        usingRestFriction = shouldUseRestFriction;
+        playerCollider.sharedMaterial = usingRestFriction ? restBrakingPhysicMaterial : movingPhysicMaterial;
     }
 
     void ClampStamina()
@@ -412,6 +452,11 @@ public class PlayerControllerAlt : MonoBehaviour
             Debug.LogError("[PlayerControllerAlt] Falta Rigidbody en el player.", this);
             ok = false;
         }
+        if (playerCollider == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta referencia: playerCollider.", this);
+            ok = false;
+        }
         if (cameraTransform == null)
         {
             Debug.LogError("[PlayerControllerAlt] Falta referencia: cameraTransform.", this);
@@ -425,6 +470,16 @@ public class PlayerControllerAlt : MonoBehaviour
         if (string.IsNullOrWhiteSpace(gameplayActionMap))
         {
             Debug.LogError("[PlayerControllerAlt] Falta valor: gameplayActionMap.", this);
+            ok = false;
+        }
+        if (movingPhysicMaterial == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta referencia: movingPhysicMaterial.", this);
+            ok = false;
+        }
+        if (restBrakingPhysicMaterial == null)
+        {
+            Debug.LogError("[PlayerControllerAlt] Falta referencia: restBrakingPhysicMaterial.", this);
             ok = false;
         }
         return ok;

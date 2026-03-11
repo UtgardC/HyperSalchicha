@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: Rifle de sarta
   weaponPrefab: {fileID: 3831421875697112312, guid: 4561f7e3ff011a142929e950933b3b33, type: 3}
+  visualModel: {fileID: 2842171605682045466, guid: 5121b20a6530d4042a4bd7eb95a99cfd, type: 3}
   fireMode: 0
   damagePerShot: 20
-  fireRateSeconds: 0.05
+  fireRateSeconds: 0.15
   isAutomatic: 1
   raycastDistance: 150
   projectilePrefab: {fileID: 0}
   projectileSpeed: 40
+  spreadShot: 0
+  spreadPelletCount: 8
+  spreadRadius: 0.35
+  spreadDistance: 20
   magazineCapacity: 30
   startingMagazineAmmo: 30
   startingReserveAmmo: 150

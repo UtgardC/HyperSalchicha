@@ -22,4 +22,11 @@ namespace HyperManzana.Weapons
         Heated = 1 << 1,
         Overclocked = 1 << 2
     }
+
+    public enum WeaponEnhancementType
+    {
+        Quantum = WeaponEnhancementFlags.Quantum,
+        Heated = WeaponEnhancementFlags.Heated,
+        Overclocked = WeaponEnhancementFlags.Overclocked
+    }
 }

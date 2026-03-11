@@ -1,6 +1,5 @@
 using UnityEngine;
 using TMPro;
-using HyperManzana.Managers;
 
 public class PlayerInteractor : MonoBehaviour
 {
@@ -21,17 +20,21 @@ public class PlayerInteractor : MonoBehaviour
         if (Physics.Raycast(ray, out var hit, interactRange, interactableMask, QueryTriggerInteraction.Collide))
         {
             var interactable = hit.collider.GetComponent<Interactable>();
+            if (interactable != null && !interactable.isActiveAndEnabled)
+                interactable = null;
+
             if (interactable != current)
             {
                 current = interactable;
-                currentPromptLabel.text = current != null ? current.Prompt : string.Empty;
             }
         }
         else if (current != null)
         {
             current = null;
-            currentPromptLabel.text = string.Empty;
         }
+
+        if (currentPromptLabel != null)
+            currentPromptLabel.text = current != null ? current.Prompt : string.Empty;
 
         if (current != null && Input.GetKeyDown(interactKey))
         {
@@ -41,26 +44,21 @@ public class PlayerInteractor : MonoBehaviour
 
     private void OnDisable()
     {
-        current = null;
-        currentPromptLabel.text = string.Empty;
+        ClearCurrentInteractionPrompt();
     }
 
     private void TryInteract(Interactable interactable)
     {
-        if (!interactable.CanUse) return;
-
-        int price = interactable.Price;
-        if (price > 0)
-        {
-            if (GameManager.Instance.cuajosActuales < price)
-            {
-                Debug.Log("no tienes cuajos suficientes");
-                return;
-            }
-
-            GameManager.Instance.SubtractCuajos(price);
-        }
+        if (interactable == null || !interactable.isActiveAndEnabled || !interactable.CanUse)
+            return;
 
         interactable.Interact();
+    }
+
+    public void ClearCurrentInteractionPrompt()
+    {
+        current = null;
+        if (currentPromptLabel != null)
+            currentPromptLabel.text = string.Empty;
     }
 }

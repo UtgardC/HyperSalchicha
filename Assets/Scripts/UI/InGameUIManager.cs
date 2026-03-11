@@ -78,7 +78,7 @@ public class InGameUIManager : MonoBehaviour
         }
     }
 
-    public void UpdateAmmoDisplay(int magazine, int reserve)
+    public void UpdateAmmoDisplay(int magazine, int reserve, bool reserveIsInfinite = false)
     {
         if (magazineDisplay != null)
         {
@@ -87,8 +87,8 @@ public class InGameUIManager : MonoBehaviour
         }
         if (reserveDisplay != null)
         {
-            reserveDisplay.text = reserve.ToString();
-            reserveDisplay.color = reserve <= 0 ? ammoZeroColor : reserveDefaultColor;
+            reserveDisplay.text = reserveIsInfinite ? "\u221E" : reserve.ToString();
+            reserveDisplay.color = reserveIsInfinite ? reserveDefaultColor : reserve <= 0 ? ammoZeroColor : reserveDefaultColor;
         }
     }
 

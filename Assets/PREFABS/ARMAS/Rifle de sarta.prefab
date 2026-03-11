@@ -8568,7 +8568,7 @@ MonoBehaviour:
   hitscanTriggers: 1
   cameraKickPresetIndex: 1
   cameraKickPositionMultiplier: 1
-  cameraKickRotationMultiplier: 1
+  cameraKickRotationMultiplier: 1.5
   cameraKickDurationMultiplier: 1
   emptyMagazineAudioCooldown: 0.1
   logWarnings: 1
@@ -8599,6 +8599,7 @@ MonoBehaviour:
     clip: {fileID: 8300000, guid: cd5ac57bdadfbfa478690a08ee0d43a4, type: 3}
   dryFireClip: {fileID: 8300000, guid: 4d741ddddcb70fc42a2567b6e51d7c94, type: 3}
   templateSource: {fileID: 8467648898095310793}
+  audioAnchorParent: {fileID: 0}
   poolSize: 10
   pitchRandomness: 0.01
 --- !u!82 &8467648898095310793

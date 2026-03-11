@@ -212,6 +212,19 @@ namespace HyperManzana.Weapons
 
         public bool AcquireWeapon(WeaponDefinition definition, bool forceReplaceEquipped = false, bool autoEquip = true)
         {
+            return AcquireWeaponWithEnhancements(
+                definition,
+                WeaponEnhancementFlags.None,
+                forceReplaceEquipped,
+                autoEquip);
+        }
+
+        public bool AcquireWeaponWithEnhancements(
+            WeaponDefinition definition,
+            WeaponEnhancementFlags enhancements,
+            bool forceReplaceEquipped = false,
+            bool autoEquip = true)
+        {
             if (definition == null)
                 return false;
 
@@ -221,9 +234,11 @@ namespace HyperManzana.Weapons
 
             bool replacingEquipped = slotIndex == equippedSlot && HasWeaponInSlot(slotIndex);
             InstallWeaponInSlot(slotIndex, definition, false);
+            if (slots[slotIndex].controller != null)
+                slots[slotIndex].controller.SetEnhancements(enhancements);
 
             if (!autoEquip)
-                return true;
+                return slots[slotIndex].controller != null;
 
             if (replacingEquipped)
             {
@@ -236,12 +251,59 @@ namespace HyperManzana.Weapons
                 RequestEquip(slotIndex);
             }
 
-            return true;
+            return slots[slotIndex].controller != null;
         }
 
         public bool ReplaceEquippedWeapon(WeaponDefinition definition, bool autoEquip = true)
         {
             return AcquireWeapon(definition, true, autoEquip);
+        }
+
+        public void EquipNewWeapon(WeaponDefinition definition)
+        {
+            if (definition == null)
+            {
+                Debug.LogWarning("[WeaponManager] EquipNewWeapon recibió definition null.", this);
+                return;
+            }
+            AcquireWeapon(definition, forceReplaceEquipped: false, autoEquip: true);
+        }
+
+        public void EquipNewWeapon(WeaponDefinition definition, WeaponEnhancementFlags enhancements)
+        {
+            if (definition == null)
+            {
+                Debug.LogWarning("[WeaponManager] EquipNewWeapon recibiÃ³ definition null.", this);
+                return;
+            }
+
+            AcquireWeaponWithEnhancements(
+                definition,
+                enhancements,
+                forceReplaceEquipped: false,
+                autoEquip: true);
+        }
+
+        public WeaponDefinition RemoveCurrentWeapon()
+        {
+            if (!IsValidSlot(equippedSlot) || !HasWeaponInSlot(equippedSlot))
+                return null;
+
+            int removedSlot = equippedSlot;
+            WeaponDefinition removedDefinition = slots[removedSlot].definition;
+
+            RemoveWeaponFromSlot(removedSlot);
+
+            pendingSlot = -1;
+            holsteringWeapon = null;
+
+            int nextSlot = FindFirstOccupiedSlot();
+            if (nextSlot >= 0)
+                EquipSlotImmediate(nextSlot);
+            else
+                PushEmptyUi();
+
+            return removedDefinition;
         }
 
         public void SetGlobalInfiniteMagazinePowerup(bool active)

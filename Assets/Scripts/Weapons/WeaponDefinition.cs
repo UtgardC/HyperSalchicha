@@ -26,6 +26,7 @@ namespace HyperManzana.Weapons
         [Header("Identity")]
         public string displayName = "Weapon";
         public GameObject weaponPrefab;
+        public GameObject visualModel;
 
         [Header("Fire")]
         public WeaponFireMode fireMode = WeaponFireMode.Hitscan;
@@ -36,6 +37,12 @@ namespace HyperManzana.Weapons
         public float raycastDistance = 150f;
         public GameObject projectilePrefab;
         public float projectileSpeed = 40f;
+
+        [Header("Spread Shot")]
+        public bool spreadShot;
+        [Min(1)] public int spreadPelletCount = 8;
+        [Min(0f)] public float spreadRadius = 0.35f;
+        [Min(0.01f)] public float spreadDistance = 20f;
 
         [Header("Ammo")]
         public int magazineCapacity = 10;

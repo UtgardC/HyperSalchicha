@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   displayName: Shotgun
   weaponPrefab: {fileID: 3831421875697112312, guid: 19dcd02e2c16c2e498bd3696cdd66c75, type: 3}
+  visualModel: {fileID: 5296799270789706973, guid: 9576b89e48b62824aa0788d3fb64d19c, type: 3}
   fireMode: 0
-  damagePerShot: 20
+  damagePerShot: 100
   fireRateSeconds: 0.7
   isAutomatic: 0
-  raycastDistance: 150
+  raycastDistance: 20
   projectilePrefab: {fileID: 0}
   projectileSpeed: 40
+  spreadShot: 1
+  spreadPelletCount: 200
+  spreadRadius: 10
+  spreadDistance: 20
   magazineCapacity: 8
   startingMagazineAmmo: 8
   startingReserveAmmo: 24
