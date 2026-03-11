@@ -23,6 +23,7 @@ namespace HyperSalchicha.Enemies
         [SerializeField] private float laserRadius = 1.75f;
         [SerializeField] private LineRenderer laserLine;
         [SerializeField] private float laserDisplayDuration = 0.2f;
+        [SerializeField] private AudioSource chargeAudioSource;
 
         private EnemyBase enemy;
         private Transform target;
@@ -111,6 +112,8 @@ namespace HyperSalchicha.Enemies
             isCharging = true;
             chargeEndTime = Time.time + Mathf.Max(0.1f, chargeTime);
             lockedTargetPosition = target.position;
+            if (chargeAudioSource != null)
+                chargeAudioSource.Play();
         }
 
         private void CancelCharge()

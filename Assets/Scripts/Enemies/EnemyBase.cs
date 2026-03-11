@@ -12,6 +12,7 @@ namespace HyperSalchicha.Enemies
         [Header("Enemy Stats")]
         [SerializeField] protected float maxHealth = 100f;
         protected float currentHealth;
+        [SerializeField] private int cuajosRewardOnKill = 50;
 
         [Header("UI References")]
         [SerializeField] private UIBarFill healthBar;
@@ -55,6 +56,7 @@ namespace HyperSalchicha.Enemies
         public bool StartsRunning => startsRunning;
         public bool WasRecycled => wasRecycled;
         public int SpawnRound => spawnRound;
+        public int CuajosRewardOnKill => Mathf.Max(0, cuajosRewardOnKill);
         public Animator Animator => animator;
         public string MovingBoolParameter => movingBool;
         public string AttackTriggerParameter => attackTrigger;
@@ -115,6 +117,7 @@ namespace HyperSalchicha.Enemies
             isDead = true;
             EnableCombatComponents(false);
             SetAnimatorDeathState(true);
+            RewardKillCuajos();
             OnKilled?.Invoke(this);
 
             float delay = Mathf.Max(0f, deathDestroyDelay);
@@ -306,6 +309,14 @@ namespace HyperSalchicha.Enemies
 
             StopCoroutine(deathRoutine);
             deathRoutine = null;
+        }
+
+        private void RewardKillCuajos()
+        {
+            if (CuajosRewardOnKill <= 0)
+                return;
+
+            GameManager.Instance?.AddCuajos(CuajosRewardOnKill);
         }
     }
 }

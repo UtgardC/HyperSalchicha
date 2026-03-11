@@ -49,7 +49,7 @@ namespace HyperSalchicha.Enemies
                 return instance;
             }
 
-            EnemyBase created = CreateInstance(type);
+            EnemyBase created = CreateInstance(type, enqueueAsAvailable: false);
             if (created != null)
                 created.gameObject.SetActive(true);
             return created;
@@ -71,10 +71,14 @@ namespace HyperSalchicha.Enemies
         {
             int desired = Mathf.Max(0, targetCount);
             while (totalCreatedByType[type] < desired)
-                CreateInstance(type);
+            {
+                EnemyBase created = CreateInstance(type, enqueueAsAvailable: true);
+                if (created == null)
+                    break;
+            }
         }
 
-        private EnemyBase CreateInstance(EnemyType type)
+        private EnemyBase CreateInstance(EnemyType type, bool enqueueAsAvailable)
         {
             EnemyBase prefab = ResolvePrefab(type);
             if (prefab == null)
@@ -87,8 +91,9 @@ namespace HyperSalchicha.Enemies
             instance.gameObject.name = $"{prefab.gameObject.name}_{type}";
             EnsureTypeSpecificComponents(instance, type);
             instance.gameObject.SetActive(false);
-            availableByType[type].Enqueue(instance);
             totalCreatedByType[type]++;
+            if (enqueueAsAvailable)
+                availableByType[type].Enqueue(instance);
             return instance;
         }
 

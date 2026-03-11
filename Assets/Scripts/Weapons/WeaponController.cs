@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using HyperSalchicha.Enemies;
+using HyperSalchicha.Player;
 using UnityEngine;
 
 namespace HyperSalchicha.Weapons
@@ -55,9 +57,11 @@ namespace HyperSalchicha.Weapons
         private float nextEmptyMagazineAudioTime;
         private readonly RaycastHit[] hitscanBuffer = new RaycastHit[32];
         private PlayerControllerAlt ownerPlayerController;
+        private PlayerStats ownerPlayerStats;
         private int enemyLayerMask;
         private WeaponEnhancementFlags currentEnhancements = WeaponEnhancementFlags.None;
         private WeaponEnhancementVisuals enhancementVisuals;
+        private readonly HashSet<EnemyBase> rewardedEnemiesThisShot = new HashSet<EnemyBase>();
 
         public event Action<WeaponController, int, int> AmmoChanged;
 
@@ -88,6 +92,7 @@ namespace HyperSalchicha.Weapons
             slotIndex = index;
             CacheMissingReferences();
             ownerPlayerController = ownerManager != null ? ownerManager.GetComponent<PlayerControllerAlt>() : null;
+            ownerPlayerStats = ownerManager != null ? ownerManager.GetComponent<PlayerStats>() : null;
             ConfigureAudioAnchorParent();
             if (enhancementVisuals != null)
             {
@@ -380,6 +385,7 @@ namespace HyperSalchicha.Weapons
 
             int pelletCount = GetPelletCount();
             float damagePerPellet = GetDamagePerTriggerPull() / pelletCount;
+            rewardedEnemiesThisShot.Clear();
 
             if (weaponDefinition.fireMode == WeaponFireMode.Projectile)
             {
@@ -400,7 +406,7 @@ namespace HyperSalchicha.Weapons
             for (int i = 0; i < pelletCount; i++)
             {
                 Vector3 shotDirection = BuildShotDirection(rayOrigin, baseRayDirection);
-                FireHitscanPellet(rayOrigin, shotDirection, damagePerPellet);
+                FireHitscanPellet(rayOrigin, shotDirection, damagePerPellet, rewardedEnemiesThisShot);
             }
         }
 
@@ -486,6 +492,8 @@ namespace HyperSalchicha.Weapons
                 weaponAudio = GetComponentInChildren<WeaponAudioController>(true);
             if (enhancementVisuals == null)
                 enhancementVisuals = GetComponentInChildren<WeaponEnhancementVisuals>(true);
+            if (ownerPlayerStats == null)
+                ownerPlayerStats = GetComponentInParent<PlayerStats>();
             if (firePoint == null)
                 firePoint = transform;
             if (weaponCameraRecoil == null)
@@ -639,14 +647,21 @@ namespace HyperSalchicha.Weapons
             up = rotation * Vector3.up;
         }
 
-        private void FireHitscanPellet(Vector3 rayOrigin, Vector3 rayDirection, float damage)
+        private void FireHitscanPellet(
+            Vector3 rayOrigin,
+            Vector3 rayDirection,
+            float damage,
+            HashSet<EnemyBase> rewardedEnemies)
         {
             if (!TryFindHitscanHit(rayOrigin, rayDirection, hitscanTriggers, out RaycastHit hit))
                 return;
 
             EnemyBase enemy = hit.collider.GetComponentInParent<EnemyBase>();
             if (enemy != null)
+            {
                 enemy.TakeDamage(damage);
+                RewardSuccessfulHit(enemy, rewardedEnemies);
+            }
         }
 
         private void FireProjectilePellet(Transform origin, Vector3 shotDirection, float damage)
@@ -660,6 +675,7 @@ namespace HyperSalchicha.Weapons
             if (payload == null)
                 payload = projectile.AddComponent<ProjectileDamagePayload>();
             payload.SetDamage(damage);
+            payload.SetHitReward(GetHitRewardCuajos());
 
             var bullet = projectile.GetComponent<BulletScript>();
             if (bullet != null)
@@ -739,6 +755,21 @@ namespace HyperSalchicha.Weapons
             if (!logWarnings)
                 return;
             Debug.LogWarning($"[{nameof(WeaponController)}] {message}", this);
+        }
+
+        private int GetHitRewardCuajos()
+        {
+            return ownerPlayerStats != null ? ownerPlayerStats.CuajosPerSuccessfulHit : 0;
+        }
+
+        private void RewardSuccessfulHit(EnemyBase enemy, HashSet<EnemyBase> rewardedEnemies)
+        {
+            if (enemy == null || ownerPlayerStats == null)
+                return;
+            if (!rewardedEnemies.Add(enemy))
+                return;
+
+            ownerPlayerStats.RewardSuccessfulEnemyHit();
         }
     }
 }

@@ -14,6 +14,11 @@ namespace HyperSalchicha.Player
         [Header("Salud")]
         [SerializeField] private float maxHealth = 100f;
         [SerializeField] private float health = 100f;
+        [SerializeField] private float regenDelaySeconds = 5f;
+        [SerializeField] private float regenPercentPerSecond = 0.2f;
+
+        [Header("Economia")]
+        [SerializeField] private int cuajosPerSuccessfulHit = 10;
 
         [Header("Eventos")] 
         [SerializeField] private FloatFloatEvent onHealthChanged = new FloatFloatEvent();
@@ -24,15 +29,18 @@ namespace HyperSalchicha.Player
 
         public float MaxHealth => maxHealth;
         public float Health => health;
+        public int CuajosPerSuccessfulHit => Mathf.Max(0, cuajosPerSuccessfulHit);
 
         public FloatFloatEvent OnHealthChanged => onHealthChanged;
         public UnityEvent OnDeath => onDeath;
 
         private bool isDead;
+        private float lastDamageTime;
 
         private void Awake()
         {
             ClampAll();
+            lastDamageTime = Time.time;
         }
 
         private void Start()
@@ -58,11 +66,25 @@ namespace HyperSalchicha.Player
                 healthBar.Set(health, maxHealth);
         }
 
+        private void Update()
+        {
+            if (isDead)
+                return;
+            if (health >= maxHealth)
+                return;
+            if (Time.time < lastDamageTime + Mathf.Max(0f, regenDelaySeconds))
+                return;
+
+            float regenPerSecond = Mathf.Max(0f, regenPercentPerSecond) * maxHealth;
+            Heal(regenPerSecond * Time.deltaTime);
+        }
+
         // Salud
         public void TakeDamage(float amount)
         {
             if (isDead) return;
             if (amount <= 0f) return;
+            lastDamageTime = Time.time;
             health = Mathf.Max(0f, health - amount);
             onHealthChanged.Invoke(health, maxHealth);
             if (healthBar != null) healthBar.Set(health, maxHealth);
@@ -84,6 +106,8 @@ namespace HyperSalchicha.Player
         public void SetHealth(float value)
         {
             health = Mathf.Clamp(value, 0f, maxHealth);
+            if (value < health)
+                lastDamageTime = Time.time;
             onHealthChanged.Invoke(health, maxHealth);
             if (healthBar != null) healthBar.Set(health, maxHealth);
             if (!isDead && health <= 0f) Die();
@@ -105,6 +129,14 @@ namespace HyperSalchicha.Player
             }
             onHealthChanged.Invoke(health, maxHealth);
             if (healthBar != null) healthBar.Set(health, maxHealth);
+        }
+
+        public void RewardSuccessfulEnemyHit()
+        {
+            if (CuajosPerSuccessfulHit <= 0)
+                return;
+
+            GameManager.Instance?.AddCuajos(CuajosPerSuccessfulHit);
         }
 
 

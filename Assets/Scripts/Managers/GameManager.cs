@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    private const string MaxRoundRecordPrefsKey = "HyperSalchicha.MaxRoundRecord";
+
     public static GameManager Instance { get; private set; }
 
     [Header("Screen")]
@@ -22,6 +24,7 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         Time.timeScale = 1f;
+        maxRoundRecord = PlayerPrefs.GetInt(MaxRoundRecordPrefsKey, 0);
     }
 
     public void NextRound()
@@ -39,6 +42,8 @@ public class GameManager : MonoBehaviour
         {
             maxRoundRecord = currentRound;
             newRecord = true;
+            PlayerPrefs.SetInt(MaxRoundRecordPrefsKey, maxRoundRecord);
+            PlayerPrefs.Save();
         }
         else
         {

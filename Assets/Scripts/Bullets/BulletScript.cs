@@ -22,15 +22,11 @@ public class BulletScript : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // Check if the collided object has the "Enemy" tag
-        if (collision.gameObject.CompareTag("Enemy"))
+        var enemy = collision.gameObject.GetComponentInParent<EnemyBase>();
+        if (enemy != null)
         {
-            // Deal damage
-            var enemy = collision.gameObject.GetComponentInParent<EnemyBase>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(GetDamage());
-            }
+            enemy.TakeDamage(GetDamage());
+            RewardSuccessfulHit();
 
             // Play hit particles safely (detached), positioned at contact point
             PlayHitParticlesAtCollision(collision);
@@ -80,5 +76,14 @@ public class BulletScript : MonoBehaviour
     private float GetDamage()
     {
         return payload != null ? payload.Damage : damage;
+    }
+
+    private void RewardSuccessfulHit()
+    {
+        int hitReward = payload != null ? payload.HitReward : 0;
+        if (hitReward <= 0)
+            return;
+
+        GameManager.Instance?.AddCuajos(hitReward);
     }
 }
